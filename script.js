@@ -792,55 +792,147 @@ retryButton.addEventListener(
    SHARE
 ========================================================= */
 
+/* =========================================================
+   SHARE
+========================================================= */
+
 shareButton.addEventListener(
   "click",
-  async function() {
+  async function () {
 
     const roundedScore =
       Math.floor(score);
 
     const seconds =
-      (
-        finalElapsed /
-        1000
-      ).toFixed(1);
+      (finalElapsed / 1000).toFixed(1);
 
-    const text =
-      `I scored ${roundedScore.toLocaleString()} on BeatMyScroll and lasted ${seconds} seconds. Beat me.`;
+    const shareUrl =
+      `https://beatmyscroll.com/?score=${roundedScore}`;
+
+    const shareText =
+      `I scored ${roundedScore.toLocaleString()} on BeatMyScroll and lasted ${seconds} seconds. Think you can beat me?`;
+
+    const shareData = {
+      title: "Beat My Scroll",
+      text: shareText,
+      url: shareUrl
+    };
+
+    shareStatus.textContent = "";
 
     try {
 
-      if (navigator.share) {
+      if (
+        navigator.share &&
+        (
+          !navigator.canShare ||
+          navigator.canShare(shareData)
+        )
+      ) {
 
-        await navigator.share({
-
-          title:
-            "Beat My Scroll",
-
-          text:
-            text,
-
-          url:
-            "https://beatmyscroll.com"
-
-        });
-
-      } else {
-
-        await navigator.clipboard.writeText(
-          `${text} https://beatmyscroll.com`
+        await navigator.share(
+          shareData
         );
 
         shareStatus.textContent =
-          "Score copied to clipboard.";
+          "Shared!";
 
+        return;
+      }
+
+    } catch (error) {
+
+      if (
+        error.name === "AbortError"
+      ) {
+        return;
+      }
+
+      console.log(
+        "Native share failed:",
+        error
+      );
+    }
+
+    const fullText =
+      `${shareText}\n${shareUrl}`;
+
+    try {
+
+      if (
+        navigator.clipboard &&
+        window.isSecureContext
+      ) {
+
+        await navigator.clipboard.writeText(
+          fullText
+        );
+
+        shareStatus.textContent =
+          "Score + challenge link copied!";
+
+        return;
       }
 
     } catch (error) {
 
       console.log(
-        "Share cancelled."
+        "Clipboard API failed:",
+        error
       );
+    }
+
+    try {
+
+      const textArea =
+        document.createElement(
+          "textarea"
+        );
+
+      textArea.value =
+        fullText;
+
+      textArea.style.position =
+        "fixed";
+
+      textArea.style.left =
+        "-9999px";
+
+      textArea.style.top =
+        "-9999px";
+
+      document.body.appendChild(
+        textArea
+      );
+
+      textArea.focus();
+      textArea.select();
+
+      const successful =
+        document.execCommand(
+          "copy"
+        );
+
+      document.body.removeChild(
+        textArea
+      );
+
+      if (successful) {
+
+        shareStatus.textContent =
+          "Score + challenge link copied!";
+
+      } else {
+
+        shareStatus.textContent =
+          "Couldn't share. Copy beatmyscroll.com manually.";
+
+      }
+
+    } catch (error) {
+
+      shareStatus.textContent =
+        "Couldn't share. Copy beatmyscroll.com manually.";
 
     }
 
