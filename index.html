@@ -2,124 +2,181 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Beat My Scroll</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
   <meta
     name="description"
-    content="How far can you scroll? Test yourself and beat the scroll."
+    content="How long can you keep scrolling? Beat your score on BeatMyScroll."
   />
+
+  <title>Beat My Scroll</title>
 
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-  <div class="score-box">
-    <span>SCROLL SCORE</span>
-    <strong id="score">0</strong>
+  <!-- MOVING BACKGROUND -->
+  <div id="scroll-world">
+    <div class="grid"></div>
   </div>
 
-  <section class="hero">
-    <div>
-      <p class="eyebrow">THE INTERNET'S MOST POINTLESS CHALLENGE</p>
 
-      <h1>
-        BEAT<br />
-        MY<br />
-        <span>SCROLL</span>
-      </h1>
+  <!-- TOP HUD -->
+  <div id="hud">
 
-      <p class="subtitle">
-        How far can you make it?
-      </p>
-
-      <div class="scroll-hint">
-        START SCROLLING
-        <div class="arrow">↓</div>
-      </div>
+    <div class="hud-block">
+      <span class="hud-label">SCORE</span>
+      <strong id="score">0</strong>
     </div>
-  </section>
 
-  <section class="checkpoint">
-    <p class="number">1,000</p>
-    <h2>Okay.</h2>
-    <p>You understand how scrolling works.</p>
-  </section>
+    <div class="hud-block center-hud">
+      <span class="hud-label">TIME</span>
+      <strong id="timer">0.0s</strong>
+    </div>
 
-  <section class="checkpoint">
-    <p class="number">2,500</p>
-    <h2>Still going?</h2>
-    <p>This is getting a little embarrassing.</p>
-  </section>
+    <div class="hud-block right-hud">
+      <span class="hud-label">SPEED</span>
+      <strong id="multiplier">1.00×</strong>
+    </div>
 
-  <section class="checkpoint">
-    <p class="number">5,000</p>
-    <h2>Your thumb okay?</h2>
-    <p>We're starting to get concerned.</p>
-  </section>
+  </div>
 
-  <section class="checkpoint warning-section">
-    <p class="number">7,500</p>
-    <h2>⚠️ WARNING</h2>
-    <p>Excessive scrolling may cause absolutely nothing.</p>
-  </section>
 
-  <section class="checkpoint">
-    <p class="number">10,000</p>
-    <h2>Bro 💀</h2>
-    <p>You could have learned a language by now.</p>
-  </section>
+  <!-- PERSONAL BEST -->
+  <div id="best-display">
+    BEST:
+    <span id="best-score">0</span>
+  </div>
 
-  <section class="checkpoint achievement">
-    <p class="small-label">ACHIEVEMENT UNLOCKED</p>
-    <div class="trophy">🏆</div>
-    <h2>Certified Scroller</h2>
-    <p>You have officially scrolled farther than necessary.</p>
-  </section>
 
-  <section class="checkpoint">
-    <p class="number">15,000</p>
-    <h2>There is nothing down here.</h2>
-    <p>Seriously.</p>
-  </section>
+  <!-- START SCREEN -->
+  <main id="start-screen" class="screen active">
 
-  <section class="checkpoint dramatic">
-    <h2>GO OUTSIDE.</h2>
-  </section>
+    <p class="eyebrow">
+      THE INTERNET'S MOST POINTLESS ENDURANCE TEST
+    </p>
 
-  <section class="checkpoint">
-    <p class="number">20,000</p>
-    <h2>You're different.</h2>
-    <p>Not necessarily in a good way.</p>
-  </section>
+    <h1>
+      BEAT<br>
+      MY<br>
+      <span>SCROLL</span>
+    </h1>
 
-  <section class="checkpoint final-section">
-    <p class="small-label">YOU DID IT</p>
+    <p class="subtitle">
+      Keep scrolling.
+      <br>
+      Stop for 1.5 seconds and you're done.
+    </p>
 
-    <h2>YOU BEAT<br />THE SCROLL.</h2>
+    <div class="start-scroll">
 
-    <p>Your final score:</p>
+      <span>
+        SCROLL TO START
+      </span>
 
-    <div id="final-score">0</div>
+      <div class="mouse">
+        <div class="wheel"></div>
+      </div>
 
-    <button id="share-button">
-      SHARE MY SCORE
-    </button>
+      <div class="arrow">
+        ↓
+      </div>
 
-    <p id="share-message"></p>
-  </section>
+    </div>
 
-  <section class="fake-ending">
-    <p>wait...</p>
-  </section>
+  </main>
 
-  <section class="real-ending">
-    <h2>WHY ARE YOU STILL SCROLLING?</h2>
-    <p>Fine. You win.</p>
-    <div class="emoji">😭</div>
-  </section>
+
+  <!-- GAME AREA -->
+  <main id="game-screen" class="screen">
+
+    <div id="speed-lines"></div>
+
+    <div id="game-message">
+      KEEP SCROLLING
+    </div>
+
+    <div id="distance-marker">
+      0
+    </div>
+
+    <div id="danger-bar">
+      <div id="danger-fill"></div>
+    </div>
+
+    <div id="danger-text">
+      DON'T STOP
+    </div>
+
+  </main>
+
+
+  <!-- GAME OVER -->
+  <main id="game-over" class="screen">
+
+    <p class="eyebrow red">
+      YOU STOPPED SCROLLING
+    </p>
+
+    <h2>
+      GAME<br>
+      OVER
+    </h2>
+
+    <p class="score-label">
+      YOUR SCORE
+    </p>
+
+    <div id="final-score">
+      0
+    </div>
+
+    <div class="results">
+
+      <div class="result">
+        <span>TIME</span>
+        <strong id="final-time">0.0s</strong>
+      </div>
+
+      <div class="result">
+        <span>MAX SPEED</span>
+        <strong id="final-speed">1.00×</strong>
+      </div>
+
+      <div class="result">
+        <span>BEST</span>
+        <strong id="final-best">0</strong>
+      </div>
+
+    </div>
+
+    <p id="new-best">
+      NEW PERSONAL BEST
+    </p>
+
+    <div class="button-row">
+
+      <button id="retry-button">
+        TRY AGAIN
+      </button>
+
+      <button id="share-button" class="secondary-button">
+        SHARE SCORE
+      </button>
+
+    </div>
+
+    <p id="share-status"></p>
+
+  </main>
+
 
   <script src="script.js"></script>
+
 </body>
 </html>
