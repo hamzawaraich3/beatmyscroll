@@ -1,127 +1,69 @@
 /* =========================================================
    BEAT MY SCROLL
-   Infinite scrolling endurance game
-========================================================= */
-
-
-/* =========================================================
-   SETTINGS
 ========================================================= */
 
 const INACTIVITY_LIMIT = 1500;
-
-// Higher = faster score growth.
-const BASE_SCROLL_POWER = 1.15;
-
-// Controls how quickly the multiplier increases.
-// Smaller number = faster acceleration.
-const ACCELERATION_RATE = 1100;
-
-// Mouse / trackpad input is capped per event.
-// Prevents giant trackpad events from giving absurd scores.
-const MAX_WHEEL_INPUT = 150;
-
-// Touch sensitivity.
-const TOUCH_POWER = 1.15;
+const MAX_INPUT = 180;
+const ACCELERATION_RATE = 900;
 
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
 
-const body =
-  document.body;
+const body = document.body;
 
-const startScreen =
-  document.getElementById("start-screen");
+const startScreen = document.getElementById("start-screen");
+const gameScreen = document.getElementById("game-screen");
+const gameOverScreen = document.getElementById("game-over");
 
-const gameScreen =
-  document.getElementById("game-screen");
+const scoreDisplay = document.getElementById("score");
+const timerDisplay = document.getElementById("timer");
+const multiplierDisplay = document.getElementById("multiplier");
+const bestScoreDisplay = document.getElementById("best-score");
 
-const gameOverScreen =
-  document.getElementById("game-over");
+const finalScoreDisplay = document.getElementById("final-score");
+const finalTimeDisplay = document.getElementById("final-time");
+const finalSpeedDisplay = document.getElementById("final-speed");
+const finalBestDisplay = document.getElementById("final-best");
 
-const scoreDisplay =
-  document.getElementById("score");
+const gameMessage = document.getElementById("game-message");
+const distanceMarker = document.getElementById("distance-marker");
 
-const timerDisplay =
-  document.getElementById("timer");
+const dangerFill = document.getElementById("danger-fill");
 
-const multiplierDisplay =
-  document.getElementById("multiplier");
+const retryButton = document.getElementById("retry-button");
+const shareButton = document.getElementById("share-button");
+const shareStatus = document.getElementById("share-status");
+const newBestDisplay = document.getElementById("new-best");
 
-const bestScoreDisplay =
-  document.getElementById("best-score");
-
-const gameMessage =
-  document.getElementById("game-message");
-
-const distanceMarker =
-  document.getElementById("distance-marker");
-
-const dangerFill =
-  document.getElementById("danger-fill");
-
-const grid =
-  document.querySelector(".grid");
-
-const speedLinesContainer =
-  document.getElementById("speed-lines");
-
-const finalScoreDisplay =
-  document.getElementById("final-score");
-
-const finalTimeDisplay =
-  document.getElementById("final-time");
-
-const finalSpeedDisplay =
-  document.getElementById("final-speed");
-
-const finalBestDisplay =
-  document.getElementById("final-best");
-
-const newBestDisplay =
-  document.getElementById("new-best");
-
-const retryButton =
-  document.getElementById("retry-button");
-
-const shareButton =
-  document.getElementById("share-button");
-
-const shareStatus =
-  document.getElementById("share-status");
+const grid = document.querySelector(".grid");
+const speedLinesContainer = document.getElementById("speed-lines");
 
 
 /* =========================================================
-   GAME STATE
+   STATE
 ========================================================= */
 
-let gameState = "waiting";
+let state = "waiting";
 
 let score = 0;
+let effort = 0;
 
-let rawEffort = 0;
-
-let visualDistance = 0;
-
-let currentMultiplier = 1;
-
+let multiplier = 1;
 let maxMultiplier = 1;
 
-let velocity = 0;
-
 let startTime = 0;
+let lastInputTime = 0;
 
-let lastScrollTime = 0;
-
-let finalElapsedTime = 0;
+let visualDistance = 0;
+let velocity = 0;
 
 let previousTouchY = null;
 
-let lastMessageMilestone = 0;
+let finalElapsed = 0;
 
-let animationFrame;
+let lastMilestone = -1;
 
 
 /* =========================================================
@@ -129,9 +71,7 @@ let animationFrame;
 ========================================================= */
 
 let personalBest =
-  Number(
-    localStorage.getItem("beatMyScrollBest")
-  ) || 0;
+  Number(localStorage.getItem("beatMyScrollBest")) || 0;
 
 bestScoreDisplay.textContent =
   personalBest.toLocaleString();
@@ -141,92 +81,27 @@ bestScoreDisplay.textContent =
    MESSAGES
 ========================================================= */
 
-const earlyMessages = [
-
+const messages = [
   "KEEP SCROLLING",
-
-  "THAT'S IT",
-
-  "DON'T STOP",
-
-  "FASTER",
-
-  "OKAY...",
-
-  "YOU'RE ACTUALLY TRYING",
-
-  "YOUR THUMB IS WARMING UP",
-
-  "STILL EASY",
-
-  "KEEP GOING",
-
-  "NO BREAKS",
-
-  "SCROLL.",
-
-  "SCROLL HARDER.",
-
-  "THERE IS NO BOTTOM",
-
-  "THIS WAS YOUR IDEA",
-
-  "WHY ARE YOU DOING THIS?",
-
-  "TOO LATE TO QUIT",
-
   "FASTER.",
-
-  "DO NOT BLINK",
-
-  "YOU CAN REST WHEN YOU LOSE",
-
-  "KEEP. MOVING."
-
-];
-
-
-const highScoreMessages = [
-
-  "YOU'RE COOKING",
-
-  "THIS IS GETTING STUPID",
-
+  "DON'T STOP",
+  "OKAY...",
+  "YOU'RE ACTUALLY TRYING",
+  "KEEP GOING",
+  "NO BREAKS",
+  "YOUR THUMB IS WARMING UP",
+  "THERE IS NO BOTTOM",
+  "THIS WAS YOUR IDEA",
+  "WHY ARE YOU DOING THIS?",
+  "TOO LATE TO QUIT",
   "YOUR MOUSE IS BEGGING YOU",
-
-  "ABSOLUTELY UNNECESSARY",
-
-  "YOU HAVE A PROBLEM",
-
-  "THE BOTTOM DOES NOT EXIST",
-
-  "PLEASE SEEK GRASS",
-
-  "YOUR SCROLL WHEEL FEARS YOU",
-
-  "THIS IS YOUR LIFE NOW",
-
-  "THERE'S NOTHING DOWN HERE",
-
-  "YOU STILL BELIEVE THERE'S AN END?",
-
-  "THE INTERNET WAS A MISTAKE",
-
-  "YOUR FINGER HAS ASCENDED",
-
-  "WE DIDN'T EXPECT YOU TO GET THIS FAR",
-
-  "ERROR: PLAYER REFUSES TO STOP",
-
   "SCROLL HARDER",
-
-  "SPEED IS EVERYTHING",
-
-  "YOU'VE GONE TOO FAR",
-
-  "THERE IS NO ESCAPE",
-
-  "KEEP GOING."
+  "YOU HAVE A PROBLEM",
+  "PLEASE SEEK GRASS",
+  "THIS IS YOUR LIFE NOW",
+  "THE INTERNET WAS A MISTAKE",
+  "ERROR: PLAYER REFUSES TO STOP",
+  "YOU'VE GONE TOO FAR"
 ];
 
 
@@ -236,71 +111,24 @@ const highScoreMessages = [
 
 const speedLines = [];
 
-function createSpeedLines() {
+for (let i = 0; i < 30; i++) {
 
-  const amount = 28;
+  const line = document.createElement("div");
 
-  for (let i = 0; i < amount; i++) {
+  line.className = "speed-line";
 
-    const line =
-      document.createElement("div");
+  line.style.left =
+    `${Math.random() * 100}%`;
 
-    line.className =
-      "speed-line";
+  line.style.height =
+    `${50 + Math.random() * 160}px`;
 
-    const left =
-      Math.random() * 100;
+  line.dataset.offset =
+    Math.random() * window.innerHeight;
 
-    const height =
-      40 + Math.random() * 160;
+  speedLinesContainer.appendChild(line);
 
-    const offset =
-      Math.random() * window.innerHeight;
-
-    line.style.left =
-      `${left}%`;
-
-    line.style.height =
-      `${height}px`;
-
-    line.dataset.offset =
-      offset;
-
-    speedLinesContainer.appendChild(line);
-
-    speedLines.push(line);
-
-  }
-
-}
-
-createSpeedLines();
-
-
-/* =========================================================
-   MULTIPLIER
-========================================================= */
-
-function calculateMultiplier() {
-
-  /*
-    Square-root growth means:
-
-    early game = noticeable acceleration
-
-    late game = still keeps increasing forever
-
-    but doesn't become completely uncontrollable
-    immediately.
-  */
-
-  return (
-    1 +
-    Math.sqrt(
-      rawEffort / ACCELERATION_RATE
-    )
-  );
-
+  speedLines.push(line);
 }
 
 
@@ -310,154 +138,126 @@ function calculateMultiplier() {
 
 function startGame() {
 
-  if (gameState !== "waiting") {
-    return;
-  }
+  if (state !== "waiting") return;
 
-  gameState = "playing";
+  state = "playing";
 
   score = 0;
+  effort = 0;
 
-  rawEffort = 0;
-
-  visualDistance = 0;
-
-  currentMultiplier = 1;
-
+  multiplier = 1;
   maxMultiplier = 1;
 
   velocity = 0;
+  visualDistance = 0;
 
-  lastMessageMilestone = 0;
+  lastMilestone = -1;
 
-  startTime =
-    performance.now();
-
-  lastScrollTime =
-    performance.now();
+  startTime = performance.now();
+  lastInputTime = performance.now();
 
   startScreen.classList.remove("active");
-
   gameOverScreen.classList.remove("active");
-
   gameScreen.classList.add("active");
 
   body.classList.add("playing");
 
-  gameMessage.textContent =
-    "GO.";
+  gameMessage.textContent = "GO.";
 
+  updateHUD();
 }
 
 
 /* =========================================================
-   REGISTER SCROLL
+   SCROLL INPUT
 ========================================================= */
 
-function registerScroll(amount) {
+function handleScrollInput(amount) {
 
-  if (amount <= 0) {
-    return;
-  }
+  if (state === "gameover") return;
 
-  if (gameState === "gameover") {
-    return;
-  }
+  /*
+    We only care about magnitude.
 
-  if (gameState === "waiting") {
+    This makes it work more reliably across
+    mouse wheels, trackpads and different OS settings.
+  */
+
+  amount = Math.abs(amount);
+
+  if (amount < 1) return;
+
+  amount =
+    Math.min(amount, MAX_INPUT);
+
+  if (state === "waiting") {
     startGame();
   }
 
-  const now =
+  lastInputTime =
     performance.now();
 
-  lastScrollTime =
-    now;
+  effort += amount;
 
   /*
-    Raw effort represents actual physical scrolling.
-
-    The multiplier then converts that effort into more
-    virtual distance as the player accelerates.
+    Multiplier grows forever.
   */
 
-  rawEffort +=
-    amount;
-
-  currentMultiplier =
-    calculateMultiplier();
+  multiplier =
+    1 +
+    Math.sqrt(
+      effort /
+      ACCELERATION_RATE
+    );
 
   maxMultiplier =
     Math.max(
       maxMultiplier,
-      currentMultiplier
+      multiplier
     );
 
-  const gainedDistance =
+  /*
+    More multiplier =
+    more score per physical scroll.
+  */
+
+  const gained =
     amount *
-    BASE_SCROLL_POWER *
-    currentMultiplier;
+    multiplier;
 
-  score +=
-    gainedDistance;
-
-  visualDistance +=
-    gainedDistance;
+  score += gained;
 
   /*
-    Velocity powers visual effects.
-
-    More scrolling = more apparent speed.
+    Visual speed.
   */
 
   velocity +=
-    gainedDistance * 0.055;
+    gained * 0.06;
 
   velocity =
     Math.min(
       velocity,
-      250
+      300
     );
 
-  updateDisplays();
-
+  updateHUD();
   updateMessage();
-
 }
 
 
 /* =========================================================
-   MOUSE / TRACKPAD
+   MOUSE + TRACKPAD
 ========================================================= */
 
 window.addEventListener(
   "wheel",
-  (event) => {
+  function(event) {
 
     event.preventDefault();
 
-    let amount =
-      event.deltaY;
-
-    /*
-      Only downward scrolling counts.
-    */
-
-    if (amount <= 0) {
-      return;
-    }
-
-    /*
-      Normalize extremely large wheel events.
-    */
-
-    amount =
-      Math.min(
-        amount,
-        MAX_WHEEL_INPUT
-      );
-
-    registerScroll(amount);
+    handleScrollInput(
+      event.deltaY
+    );
 
   },
   {
@@ -472,11 +272,9 @@ window.addEventListener(
 
 window.addEventListener(
   "touchstart",
-  (event) => {
+  function(event) {
 
-    if (!event.touches.length) {
-      return;
-    }
+    if (!event.touches.length) return;
 
     previousTouchY =
       event.touches[0].clientY;
@@ -490,7 +288,7 @@ window.addEventListener(
 
 window.addEventListener(
   "touchmove",
-  (event) => {
+  function(event) {
 
     event.preventDefault();
 
@@ -511,16 +309,9 @@ window.addEventListener(
     previousTouchY =
       currentY;
 
-    if (difference > 0) {
-
-      registerScroll(
-        Math.min(
-          difference * TOUCH_POWER,
-          MAX_WHEEL_INPUT
-        )
-      );
-
-    }
+    handleScrollInput(
+      difference * 1.4
+    );
 
   },
   {
@@ -531,13 +322,10 @@ window.addEventListener(
 
 window.addEventListener(
   "touchend",
-  () => {
+  function() {
 
     previousTouchY = null;
 
-  },
-  {
-    passive: false
   }
 );
 
@@ -548,38 +336,48 @@ window.addEventListener(
 
 window.addEventListener(
   "keydown",
-  (event) => {
+  function(event) {
 
     if (
-      gameState === "gameover" &&
+      state === "gameover" &&
       event.key === "Enter"
     ) {
 
       resetGame();
 
       return;
-
     }
 
-    const downwardKeys = [
-
+    const scrollKeys = [
       "ArrowDown",
-
       "PageDown",
-
       " "
-
     ];
 
     if (
-      downwardKeys.includes(
+      scrollKeys.includes(
         event.key
       )
     ) {
 
       event.preventDefault();
 
-      registerScroll(70);
+      handleScrollInput(75);
+
+    }
+
+    /*
+      Stop instant jumping.
+    */
+
+    if (
+      event.key === "End" ||
+      event.key === "Home" ||
+      event.key === "PageUp" ||
+      event.key === "ArrowUp"
+    ) {
+
+      event.preventDefault();
 
     }
 
@@ -588,136 +386,122 @@ window.addEventListener(
 
 
 /* =========================================================
-   DISPLAY
+   UPDATE HUD
 ========================================================= */
 
-function updateDisplays() {
+function updateHUD() {
+
+  const roundedScore =
+    Math.floor(score);
 
   scoreDisplay.textContent =
-    Math.floor(score)
-      .toLocaleString();
-
-  multiplierDisplay.textContent =
-    `${currentMultiplier.toFixed(2)}×`;
+    roundedScore.toLocaleString();
 
   distanceMarker.textContent =
-    Math.floor(score)
-      .toLocaleString();
+    roundedScore.toLocaleString();
 
+  multiplierDisplay.textContent =
+    `${multiplier.toFixed(2)}×`;
 }
 
 
 /* =========================================================
-   MESSAGE SYSTEM
+   MESSAGES
 ========================================================= */
 
 function updateMessage() {
-
-  /*
-    New message approximately every 2,500 score.
-
-    Because score accelerates, messages also begin arriving
-    faster as the run becomes more intense.
-  */
 
   const milestone =
     Math.floor(score / 2500);
 
   if (
-    milestone <=
-    lastMessageMilestone
+    milestone === lastMilestone
   ) {
     return;
   }
 
-  lastMessageMilestone =
-    milestone;
+  lastMilestone = milestone;
 
   let message;
 
-  if (milestone < earlyMessages.length) {
+  if (
+    milestone <
+    messages.length
+  ) {
 
     message =
-      earlyMessages[milestone];
+      messages[milestone];
 
   } else {
 
-    const index =
-      Math.floor(
-        Math.random() *
-        highScoreMessages.length
-      );
-
     message =
-      highScoreMessages[index];
+      messages[
+        Math.floor(
+          Math.random() *
+          messages.length
+        )
+      ];
 
   }
 
-  gameMessage.style.opacity =
-    "0";
+  gameMessage.style.opacity = "0";
 
   gameMessage.style.transform =
     "translate(-50%, -50%) scale(1.12)";
 
-  setTimeout(() => {
+  setTimeout(
+    function() {
 
-    gameMessage.textContent =
-      message;
+      gameMessage.textContent =
+        message;
 
-    gameMessage.style.opacity =
-      "1";
+      gameMessage.style.opacity =
+        "1";
 
-    gameMessage.style.transform =
-      "translate(-50%, -50%) scale(1)";
+      gameMessage.style.transform =
+        "translate(-50%, -50%) scale(1)";
 
-  }, 90);
-
+    },
+    80
+  );
 }
 
 
 /* =========================================================
-   MAIN ANIMATION LOOP
+   MAIN GAME LOOP
 ========================================================= */
 
-function animate(now) {
+function gameLoop(now) {
 
-  if (gameState === "playing") {
+  if (state === "playing") {
 
     const elapsed =
       now - startTime;
 
-    const timeSinceScroll =
-      now - lastScrollTime;
+    const idleTime =
+      now - lastInputTime;
 
-    /*
-      TIMER
-    */
+
+    /* TIMER */
 
     timerDisplay.textContent =
       `${(elapsed / 1000).toFixed(1)}s`;
 
 
-    /*
-      1.5 SECOND DEATH TIMER
-    */
+    /* 1.5 SECOND LIFE BAR */
 
     const remaining =
       Math.max(
         0,
         1 -
-        timeSinceScroll /
+        idleTime /
         INACTIVITY_LIMIT
       );
 
     dangerFill.style.transform =
       `scaleX(${remaining})`;
 
-
-    /*
-      Bar becomes red as you're about to lose.
-    */
-
-    if (remaining < 0.33) {
+    if (remaining < 0.35) {
 
       dangerFill.style.background =
         "#ff3b3b";
@@ -730,13 +514,10 @@ function animate(now) {
     }
 
 
-    /*
-      If no scroll input for 1.5 seconds:
-      GAME OVER.
-    */
+    /* GAME OVER */
 
     if (
-      timeSinceScroll >=
+      idleTime >=
       INACTIVITY_LIMIT
     ) {
 
@@ -745,83 +526,64 @@ function animate(now) {
     }
 
 
-    /*
-      MOMENTUM DECAY
+    /* MOMENTUM */
 
-      Scrolling makes velocity shoot upward.
-
-      Velocity then gradually falls between inputs.
-    */
-
-    velocity *= 0.94;
-
-    if (velocity < 0.05) {
-      velocity = 0;
-    }
-
-
-    /*
-      MOVE THE INFINITE WORLD
-
-      We only use modulo values so the page can visually
-      continue forever without needing a gigantic DOM.
-    */
+    velocity *= 0.95;
 
     visualDistance +=
       velocity;
 
-    const gridOffset =
+
+    /* MOVE GRID */
+
+    const gridMovement =
       visualDistance % 140;
 
     grid.style.backgroundPosition =
-      `0 ${gridOffset}px`;
+      `0 ${gridMovement}px`;
 
 
-    /*
-      SPEED LINES
-    */
+    /* SPEED LINES */
 
-    const speedOpacity =
+    const opacity =
       Math.min(
-        velocity / 65,
-        0.8
+        velocity / 80,
+        0.85
       );
 
     speedLinesContainer.style.opacity =
-      speedOpacity;
+      opacity;
 
     speedLines.forEach(
-      (line, index) => {
+      function(line, index) {
 
-        const originalOffset =
+        const startingPoint =
           Number(
             line.dataset.offset
           );
 
-        const movement =
+        const y =
           (
-            originalOffset +
+            startingPoint +
             visualDistance *
             (
-              0.7 +
+              0.6 +
               index / 35
             )
           ) %
           (
             window.innerHeight +
-            250
+            300
           );
 
         line.style.transform =
-          `translateY(${movement - 200}px)`;
+          `translateY(${y - 250}px)`;
 
       }
     );
 
 
-    /*
-      VISUAL SPEED LEVELS
-    */
+    /* SPEED EFFECTS */
 
     body.classList.remove(
       "speed-2",
@@ -829,44 +591,34 @@ function animate(now) {
       "speed-4"
     );
 
-    if (
-      currentMultiplier >= 2
-    ) {
-
+    if (multiplier >= 2) {
       body.classList.add(
         "speed-2"
       );
-
     }
 
-    if (
-      currentMultiplier >= 3
-    ) {
-
+    if (multiplier >= 3) {
       body.classList.add(
         "speed-3"
       );
-
     }
 
-    if (
-      currentMultiplier >= 4.5
-    ) {
-
+    if (multiplier >= 4.5) {
       body.classList.add(
         "speed-4"
       );
-
     }
 
   }
 
-  animationFrame =
-    requestAnimationFrame(
-      animate
-    );
-
+  requestAnimationFrame(
+    gameLoop
+  );
 }
+
+requestAnimationFrame(
+  gameLoop
+);
 
 
 /* =========================================================
@@ -875,53 +627,45 @@ function animate(now) {
 
 function endGame(now) {
 
-  if (
-    gameState !== "playing"
-  ) {
+  if (state !== "playing") {
     return;
   }
 
-  gameState =
-    "gameover";
+  state = "gameover";
 
-  finalElapsedTime =
+  finalElapsed =
     now - startTime;
 
-  const finalScore =
+  const roundedScore =
     Math.floor(score);
 
-  let isNewBest =
+  let newRecord =
     false;
 
+
   if (
-    finalScore >
+    roundedScore >
     personalBest
   ) {
 
     personalBest =
-      finalScore;
+      roundedScore;
 
     localStorage.setItem(
       "beatMyScrollBest",
       personalBest
     );
 
-    isNewBest =
-      true;
-
+    newRecord = true;
   }
 
 
-  /*
-    UPDATE RESULTS
-  */
-
   finalScoreDisplay.textContent =
-    finalScore.toLocaleString();
+    roundedScore.toLocaleString();
 
   finalTimeDisplay.textContent =
     `${(
-      finalElapsedTime /
+      finalElapsed /
       1000
     ).toFixed(1)}s`;
 
@@ -935,11 +679,7 @@ function endGame(now) {
     personalBest.toLocaleString();
 
 
-  /*
-    NEW BEST MESSAGE
-  */
-
-  if (isNewBest) {
+  if (newRecord) {
 
     newBestDisplay.classList.add(
       "visible"
@@ -953,10 +693,6 @@ function endGame(now) {
 
   }
 
-
-  /*
-    SHOW GAME OVER
-  */
 
   body.classList.remove(
     "playing",
@@ -972,7 +708,6 @@ function endGame(now) {
   gameOverScreen.classList.add(
     "active"
   );
-
 }
 
 
@@ -982,44 +717,23 @@ function endGame(now) {
 
 function resetGame() {
 
-  gameState =
-    "waiting";
+  state = "waiting";
 
-  score =
-    0;
+  score = 0;
+  effort = 0;
 
-  rawEffort =
-    0;
+  multiplier = 1;
+  maxMultiplier = 1;
 
-  visualDistance =
-    0;
+  velocity = 0;
+  visualDistance = 0;
 
-  velocity =
-    0;
+  previousTouchY = null;
 
-  currentMultiplier =
-    1;
-
-  maxMultiplier =
-    1;
-
-  previousTouchY =
-    null;
-
-  lastMessageMilestone =
-    0;
-
-  scoreDisplay.textContent =
-    "0";
-
-  timerDisplay.textContent =
-    "0.0s";
-
-  multiplierDisplay.textContent =
-    "1.00×";
-
-  distanceMarker.textContent =
-    "0";
+  scoreDisplay.textContent = "0";
+  timerDisplay.textContent = "0.0s";
+  multiplierDisplay.textContent = "1.00×";
+  distanceMarker.textContent = "0";
 
   dangerFill.style.transform =
     "scaleX(1)";
@@ -1027,11 +741,11 @@ function resetGame() {
   dangerFill.style.background =
     "#b7ff32";
 
-  shareStatus.textContent =
-    "";
-
   gameMessage.textContent =
     "KEEP SCROLLING";
+
+  shareStatus.textContent =
+    "";
 
   grid.style.backgroundPosition =
     "0 0";
@@ -1057,61 +771,64 @@ function resetGame() {
   startScreen.classList.add(
     "active"
   );
-
 }
 
 
 /* =========================================================
-   BUTTONS
+   TRY AGAIN
 ========================================================= */
 
 retryButton.addEventListener(
   "click",
-  resetGame
+  function() {
+
+    resetGame();
+
+  }
 );
 
 
+/* =========================================================
+   SHARE
+========================================================= */
+
 shareButton.addEventListener(
   "click",
-  async () => {
+  async function() {
 
-    const finalScore =
+    const roundedScore =
       Math.floor(score);
 
     const seconds =
       (
-        finalElapsedTime /
+        finalElapsed /
         1000
       ).toFixed(1);
 
-    const shareText =
-      `I scored ${finalScore.toLocaleString()} on BeatMyScroll.com and survived ${seconds} seconds. Beat me.`;
-
-    const shareData = {
-
-      title:
-        "Beat My Scroll",
-
-      text:
-        shareText,
-
-      url:
-        "https://beatmyscroll.com"
-
-    };
+    const text =
+      `I scored ${roundedScore.toLocaleString()} on BeatMyScroll and lasted ${seconds} seconds. Beat me.`;
 
     try {
 
       if (navigator.share) {
 
-        await navigator.share(
-          shareData
-        );
+        await navigator.share({
+
+          title:
+            "Beat My Scroll",
+
+          text:
+            text,
+
+          url:
+            "https://beatmyscroll.com"
+
+        });
 
       } else {
 
         await navigator.clipboard.writeText(
-          `${shareText} https://beatmyscroll.com`
+          `${text} https://beatmyscroll.com`
         );
 
         shareStatus.textContent =
@@ -1121,70 +838,11 @@ shareButton.addEventListener(
 
     } catch (error) {
 
-      /*
-        User cancelled native share.
-        No error needed.
-      */
+      console.log(
+        "Share cancelled."
+      );
 
     }
 
   }
 );
-
-
-/* =========================================================
-   PREVENT OTHER SCROLLING SHORTCUTS
-========================================================= */
-
-window.addEventListener(
-  "keydown",
-  (event) => {
-
-    const blockedKeys = [
-
-      "End",
-
-      "Home",
-
-      "ArrowUp",
-
-      "PageUp"
-
-    ];
-
-    if (
-      blockedKeys.includes(
-        event.key
-      )
-    ) {
-
-      event.preventDefault();
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   PREVENT CONTEXTUAL DRAGGING
-========================================================= */
-
-window.addEventListener(
-  "dragstart",
-  (event) => {
-
-    event.preventDefault();
-
-  }
-);
-
-
-/* =========================================================
-   START ANIMATION LOOP
-========================================================= */
-
-animationFrame =
-  requestAnimationFrame(
-    animate
-  );
