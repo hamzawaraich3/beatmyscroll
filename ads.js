@@ -65,15 +65,8 @@
 
     started = true;
 
-    // Google AdSense's standard loader; no Auto Ads and no pop-up formats.
-    const loader = document.createElement("script");
-    loader.async = true;
-    loader.crossOrigin = "anonymous";
-    loader.src =
-      "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" +
-      "?client=" + encodeURIComponent(publisher);
-    document.head.appendChild(loader);
-
+    // AdSense is loaded once in <head> for site verification.
+    // Only request manual ads after both ad-unit IDs are configured.
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       window.adsbygoogle.push({});
