@@ -979,25 +979,25 @@ body.playing #combo-hud {
   display: grid;
   place-items: center;
 
-  opacity: 0.78;
+  opacity: 0.52;
 
   filter:
-    drop-shadow(0 0 6px rgba(33, 230, 255, 0.26))
-    drop-shadow(0 0 12px rgba(255, 43, 214, 0.10));
+    drop-shadow(0 0 4px rgba(33, 230, 255, 0.13))
+    drop-shadow(0 0 8px rgba(255, 43, 214, 0.045));
 
-  animation: rushTargetBreathe 1.05s ease-in-out infinite alternate;
+  animation: rushTargetBreathe 1.35s ease-in-out infinite alternate;
 }
 
 .boost-approach {
   position: absolute;
   inset: -22px;
-  border: 1px solid color-mix(in srgb, var(--rush-color) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rush-color) 55%, transparent);
   border-radius: 50%;
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--rush-color) 28%, transparent),
-    inset 0 0 8px color-mix(in srgb, var(--rush-color) 8%, transparent);
+    0 0 5px color-mix(in srgb, var(--rush-color) 16%, transparent),
+    inset 0 0 5px color-mix(in srgb, var(--rush-color) 4%, transparent);
   transform: scale(1.8);
-  opacity: 0.58;
+  opacity: 0.38;
   will-change: transform, opacity;
 }
 
@@ -1050,8 +1050,7 @@ body.playing #combo-hud {
   font-weight: 950;
   line-height: 1;
   text-shadow:
-    0 0 8px color-mix(in srgb, var(--rush-color) 62%, transparent),
-    0 0 20px color-mix(in srgb, var(--rush-color) 32%, transparent);
+    0 0 5px color-mix(in srgb, var(--rush-color) 30%, transparent);
 }
 
 .boost-copy strong {
@@ -1236,17 +1235,19 @@ body.speed-4 #distance-marker {
 
 body.speed-3 .boost-target {
   filter:
-    drop-shadow(0 0 8px rgba(33, 230, 255, 0.34))
-    drop-shadow(0 0 16px rgba(255, 43, 214, 0.14));
+    drop-shadow(0 0 4px rgba(33, 230, 255, 0.17))
+    drop-shadow(0 0 8px rgba(255, 43, 214, 0.07));
 }
 
 @keyframes rushTargetBreathe {
   from {
-    opacity: 0.58;
+    opacity: 0.42;
+    transform: translate(-50%, -50%) scale(0.985);
   }
 
   to {
-    opacity: 0.82;
+    opacity: 0.62;
+    transform: translate(-50%, -50%) scale(1.015);
   }
 }
 
