@@ -37,6 +37,9 @@ body {
 
 :root {
   --green: #b7ff32;
+  --cyan: #21e6ff;
+  --pink: #ff2bd6;
+  --purple: #8a5cff;
   --red: #ff3b3b;
   --gray: #777;
   --dark: #050505;
@@ -59,12 +62,9 @@ body {
   z-index: 0;
 
   background:
-    radial-gradient(
-      circle at center,
-      #151515 0%,
-      #090909 45%,
-      #030303 100%
-    );
+    radial-gradient(circle at 50% 45%, rgba(33, 230, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 35% 70%, rgba(255, 43, 214, 0.07), transparent 34%),
+    radial-gradient(circle at center, #151515 0%, #090909 45%, #030303 100%);
 }
 
 
@@ -81,12 +81,12 @@ body {
 
   background-image:
     linear-gradient(
-      rgba(183, 255, 50, 0.14) 1px,
+      rgba(33, 230, 255, 0.12) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(183, 255, 50, 0.08) 1px,
+      rgba(183, 255, 50, 0.10) 1px,
       transparent 1px
     );
 
@@ -172,9 +172,14 @@ body.playing #hud {
 }
 
 
-#score,
-#multiplier {
+#score {
   color: var(--green);
+  text-shadow: 0 0 18px rgba(183, 255, 50, 0.28);
+}
+
+#multiplier {
+  color: var(--cyan);
+  text-shadow: 0 0 18px rgba(33, 230, 255, 0.28);
 }
 
 
@@ -507,12 +512,24 @@ body.playing #hud {
 
   background: linear-gradient(
     transparent,
-    rgba(183,255,50,0.75)
+    rgba(183,255,50,0.82)
   );
 
   border-radius: 10px;
 
+  filter: drop-shadow(0 0 6px rgba(183,255,50,0.55));
+
   will-change: transform;
+}
+
+.speed-line:nth-child(3n + 1) {
+  background: linear-gradient(transparent, rgba(33,230,255,0.85));
+  filter: drop-shadow(0 0 6px rgba(33,230,255,0.55));
+}
+
+.speed-line:nth-child(3n + 2) {
+  background: linear-gradient(transparent, rgba(255,43,214,0.78));
+  filter: drop-shadow(0 0 6px rgba(255,43,214,0.45));
 }
 
 
@@ -834,7 +851,8 @@ body.speed-4 #game-screen {
 }
 
 .challenge-box.hidden,
-.challenge-target.hidden {
+.challenge-target.hidden,
+.boost-target.hidden {
   display: none;
 }
 
@@ -876,4 +894,293 @@ body.speed-4 #game-screen {
   color: var(--green);
   font-weight: 900;
   margin-left: 6px;
+}
+
+
+/* =========================================================
+   NEON RUSH / COMBO SYSTEM
+========================================================= */
+
+.rush-hint {
+  margin-top: 18px;
+  color: rgba(33, 230, 255, 0.72);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-shadow: 0 0 14px rgba(33, 230, 255, 0.2);
+}
+
+#combo-hud {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  z-index: 52;
+  transform: translateX(-50%);
+  opacity: 0;
+  color: #777;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+body.playing #combo-hud {
+  opacity: 1;
+}
+
+#combo-hud strong {
+  margin-left: 8px;
+  color: var(--pink);
+  font-size: 20px;
+  letter-spacing: 0;
+  text-shadow:
+    0 0 8px rgba(255, 43, 214, 0.5),
+    0 0 18px rgba(255, 43, 214, 0.25);
+}
+
+.boost-target {
+  --boost-fill: 0deg;
+
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  width: clamp(112px, 14vw, 160px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  z-index: 35;
+
+  display: grid;
+  place-items: center;
+
+  filter:
+    drop-shadow(0 0 12px rgba(33, 230, 255, 0.55))
+    drop-shadow(0 0 28px rgba(255, 43, 214, 0.2));
+}
+
+.boost-approach {
+  position: absolute;
+  inset: -22px;
+  border: 2px solid rgba(33, 230, 255, 0.95);
+  border-radius: 50%;
+  box-shadow:
+    0 0 18px rgba(33, 230, 255, 0.5),
+    inset 0 0 18px rgba(33, 230, 255, 0.12);
+  transform: scale(1.8);
+  opacity: 0.9;
+  will-change: transform, opacity;
+}
+
+.boost-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      var(--cyan) 0deg,
+      var(--cyan) var(--boost-fill),
+      rgba(255, 255, 255, 0.08) var(--boost-fill),
+      rgba(255, 255, 255, 0.08) 360deg
+    );
+  display: grid;
+  place-items: center;
+}
+
+.boost-core::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 43, 214, 0.13), transparent 40%),
+    rgba(4, 7, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.boost-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.boost-copy span {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 2px;
+}
+
+.boost-copy strong {
+  color: var(--cyan);
+  font-size: 24px;
+  font-weight: 950;
+  text-shadow: 0 0 12px rgba(33, 230, 255, 0.5);
+}
+
+.boost-toast {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translate(-50%, -8px) scale(0.95);
+  z-index: 36;
+  opacity: 0;
+  color: var(--pink);
+  font-size: clamp(18px, 4vw, 40px);
+  font-weight: 950;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 10px rgba(255, 43, 214, 0.55),
+    0 0 28px rgba(255, 43, 214, 0.25);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+
+.boost-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.boost-toast.missed {
+  color: var(--red);
+  text-shadow:
+    0 0 10px rgba(255, 59, 59, 0.5),
+    0 0 28px rgba(255, 59, 59, 0.22);
+}
+
+
+/* =========================================================
+   HYPERSPACE
+========================================================= */
+
+#hyperspace {
+  position: fixed;
+  inset: -35%;
+  z-index: 6;
+  pointer-events: none;
+
+  opacity: 0;
+
+  background:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      transparent 0deg 3.2deg,
+      rgba(183, 255, 50, 0.68) 3.3deg 3.55deg,
+      transparent 3.7deg 7deg,
+      rgba(33, 230, 255, 0.62) 7.1deg 7.35deg,
+      transparent 7.5deg 11deg,
+      rgba(255, 43, 214, 0.55) 11.1deg 11.35deg,
+      transparent 11.5deg 15deg
+    );
+
+  -webkit-mask-image:
+    radial-gradient(circle at center, transparent 0 8%, rgba(0,0,0,0.15) 14%, #000 52%, #000 100%);
+
+  mask-image:
+    radial-gradient(circle at center, transparent 0 8%, rgba(0,0,0,0.15) 14%, #000 52%, #000 100%);
+
+  transform: scale(1.1);
+  transition: opacity 0.25s;
+  will-change: transform, opacity, filter;
+}
+
+body.hyperspace #hyperspace {
+  opacity: 0.82;
+  filter:
+    blur(0.35px)
+    saturate(1.35)
+    brightness(1.35);
+
+  animation:
+    hyperspaceRush 0.18s linear infinite alternate;
+}
+
+body.hyperspace #scroll-world {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12), transparent 8%),
+    radial-gradient(circle at 50% 50%, rgba(33,230,255,0.13), transparent 26%),
+    radial-gradient(circle at 35% 65%, rgba(255,43,214,0.10), transparent 34%),
+    #020205;
+}
+
+body.hyperspace .grid {
+  opacity: 0.08;
+}
+
+body.hyperspace #game-message {
+  text-shadow:
+    3px 0 rgba(255, 43, 214, 0.45),
+    -3px 0 rgba(33, 230, 255, 0.45),
+    0 0 28px rgba(255,255,255,0.18);
+}
+
+@keyframes hyperspaceRush {
+  from {
+    transform: scale(1.06) rotate(-0.15deg);
+  }
+
+  to {
+    transform: scale(1.16) rotate(0.15deg);
+  }
+}
+
+
+/* =========================================================
+   EXTRA NEON POLISH
+========================================================= */
+
+#danger-bar {
+  box-shadow:
+    0 0 12px rgba(183, 255, 50, 0.12);
+}
+
+#danger-fill {
+  box-shadow:
+    0 0 10px rgba(183, 255, 50, 0.55);
+}
+
+#game-message {
+  text-shadow:
+    0 0 22px rgba(183, 255, 50, 0.10);
+}
+
+body.speed-3 #distance-marker {
+  color: var(--cyan);
+  text-shadow: 0 0 16px rgba(33, 230, 255, 0.4);
+}
+
+body.speed-4 #distance-marker {
+  color: var(--pink);
+  text-shadow: 0 0 18px rgba(255, 43, 214, 0.45);
+}
+
+@media (max-width: 600px) {
+  #combo-hud {
+    top: 64px;
+  }
+
+  .rush-hint {
+    max-width: 280px;
+    line-height: 1.5;
+  }
+
+  .boost-target {
+    width: 118px;
+  }
+
+  .boost-toast {
+    top: 25%;
+  }
+
+  .results {
+    flex-wrap: wrap;
+  }
+
+  .result {
+    min-width: 42%;
+  }
 }
