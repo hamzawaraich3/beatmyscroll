@@ -12,16 +12,63 @@ const SPEED_CURVE = 1.25;
 const SPEED_GAIN = 1.6;
 const MAX_SPEED_MULTIPLIER = 8;
 
-const BOOST_REQUIRED = 900;
-const BOOST_WINDOW = 950;
 const BOOST_EVENT_CAP = 45;
-const BOOST_MIN_RATE = 2200;
 const BOOST_PROGRESS_COOLDOWN = 24;
 const BOOST_FIRST_DELAY = 4000;
 const BOOST_MIN_GAP = 3400;
 const BOOST_MAX_GAP = 5200;
-const COMBO_MAX = 5;
 const COMBO_DURATION = 7000;
+
+const BOOST_TIERS = [
+  {
+    multiplier: 1.2,
+    weight: 34,
+    required: 260,
+    window: 1700,
+    minRate: 900,
+    color: "#b7ff32"
+  },
+  {
+    multiplier: 1.3,
+    weight: 26,
+    required: 340,
+    window: 1550,
+    minRate: 1100,
+    color: "#21e6ff"
+  },
+  {
+    multiplier: 1.5,
+    weight: 18,
+    required: 470,
+    window: 1350,
+    minRate: 1500,
+    color: "#8a5cff"
+  },
+  {
+    multiplier: 2,
+    weight: 12,
+    required: 650,
+    window: 1150,
+    minRate: 1900,
+    color: "#ff2bd6"
+  },
+  {
+    multiplier: 4,
+    weight: 7,
+    required: 820,
+    window: 1000,
+    minRate: 2400,
+    color: "#ff9d2e"
+  },
+  {
+    multiplier: 5,
+    weight: 3,
+    required: 980,
+    window: 900,
+    minRate: 3000,
+    color: "#ff3b3b"
+  }
+];
 
 const HYPERSPACE_MULTIPLIER = 7.25;
 const HYPERSPACE_RATE = 5200;
@@ -70,6 +117,7 @@ const boostTarget = document.getElementById("boost-target");
 const boostApproach = document.getElementById("boost-approach");
 const boostCore = document.getElementById("boost-core");
 const boostProgressDisplay = document.getElementById("boost-progress");
+const boostRewardDisplay = document.getElementById("boost-reward");
 const boostToast = document.getElementById("boost-toast");
 
 
@@ -107,6 +155,7 @@ let boostDeadline = 0;
 let nextBoostAt = Infinity;
 let boostToastTimer = null;
 let lastBoostProgressAt = 0;
+let currentBoostTier = BOOST_TIERS[0];
 
 const urlParams = new URLSearchParams(window.location.search);
 const parsedChallengeScore = Number(urlParams.get("score"));
@@ -199,6 +248,36 @@ function randomBoostGap() {
   );
 }
 
+function formatCombo(value) {
+  return (
+    "×" +
+    Number(value.toFixed(1)).toString()
+  );
+}
+
+function pickBoostTier() {
+  const totalWeight =
+    BOOST_TIERS.reduce(
+      function(sum, tier) {
+        return sum + tier.weight;
+      },
+      0
+    );
+
+  let roll =
+    Math.random() * totalWeight;
+
+  for (const tier of BOOST_TIERS) {
+    roll -= tier.weight;
+
+    if (roll <= 0) {
+      return tier;
+    }
+  }
+
+  return BOOST_TIERS[0];
+}
+
 function calculateSpeedMultiplier() {
   const normalized =
     Math.max(0, scrollRate) / SPEED_REFERENCE;
@@ -225,7 +304,7 @@ function updateHUD() {
     multiplier.toFixed(2) + "×";
 
   comboDisplay.textContent =
-    "×" + comboMultiplier;
+    formatCombo(comboMultiplier);
 
   if (
     challengeScore > 0 &&
@@ -270,8 +349,10 @@ function spawnBoost(now) {
   boostActive = true;
   boostProgress = 0;
   lastBoostProgressAt = 0;
+  currentBoostTier = pickBoostTier();
   boostStartedAt = now;
-  boostDeadline = now + BOOST_WINDOW;
+  boostDeadline =
+    now + currentBoostTier.window;
 
   const left = 22 + Math.random() * 56;
   const top = 34 + Math.random() * 34;
@@ -279,7 +360,15 @@ function spawnBoost(now) {
   boostTarget.style.left = left + "%";
   boostTarget.style.top = top + "%";
 
+  boostTarget.style.setProperty(
+    "--rush-color",
+    currentBoostTier.color
+  );
+
   boostCore.style.setProperty("--boost-fill", "0deg");
+  boostRewardDisplay.textContent =
+    formatCombo(currentBoostTier.multiplier);
+
   boostProgressDisplay.textContent = "0%";
 
   boostApproach.style.transform = "scale(1.8)";
@@ -310,7 +399,10 @@ function finishBoost(success, now) {
 
   if (success) {
     comboMultiplier =
-      Math.min(COMBO_MAX, comboMultiplier + 1);
+      Math.max(
+        comboMultiplier,
+        currentBoostTier.multiplier
+      );
 
     maxCombo =
       Math.max(maxCombo, comboMultiplier);
@@ -319,7 +411,7 @@ function finishBoost(success, now) {
       now + COMBO_DURATION;
 
     showBoostToast(
-      "RUSH ×" + comboMultiplier,
+      "RUSH " + formatCombo(currentBoostTier.multiplier),
       false
     );
   } else {
@@ -348,7 +440,7 @@ function updateBoost(now) {
 
   const progressRatio =
     clamp(
-      boostProgress / BOOST_REQUIRED,
+      boostProgress / currentBoostTier.required,
       0,
       1
     );
@@ -477,7 +569,7 @@ function handleScrollInput(amount) {
   if (
     boostActive &&
     signedAmount > 0 &&
-    instantRate >= BOOST_MIN_RATE &&
+    instantRate >= currentBoostTier.minRate &&
     (
       lastBoostProgressAt === 0 ||
       now - lastBoostProgressAt >= BOOST_PROGRESS_COOLDOWN
@@ -498,7 +590,7 @@ function handleScrollInput(amount) {
     boostProgress +=
       rushAmount * rateBonus;
 
-    if (boostProgress >= BOOST_REQUIRED) {
+    if (boostProgress >= currentBoostTier.required) {
       finishBoost(true, now);
     }
   }
@@ -927,7 +1019,7 @@ function endGame(now) {
     maxMultiplier.toFixed(2) + "×";
 
   finalComboDisplay.textContent =
-    "×" + maxCombo;
+    formatCombo(maxCombo);
 
   finalBestDisplay.textContent =
     personalBest.toLocaleString();
