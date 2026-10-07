@@ -1235,3 +1235,530 @@ body.speed-3 .boost-target {
     drop-shadow(0 0 16px rgba(33, 230, 255, 0.72))
     drop-shadow(0 0 34px rgba(255, 43, 214, 0.32));
 }
+
+
+/* =========================================================
+   SPEED MOMENTS + AUDIO UI
+========================================================= */
+
+.sound-toggle {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 140;
+  width: auto;
+  padding: 10px 14px;
+  border: 1px solid rgba(33, 230, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(5, 8, 12, 0.78);
+  color: var(--cyan);
+  font-size: 9px;
+  letter-spacing: 2px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 18px rgba(33, 230, 255, 0.08);
+}
+
+.sound-toggle.muted {
+  color: #777;
+  border-color: #2c2c2c;
+  box-shadow: none;
+}
+
+.moment-card {
+  --moment-color: var(--cyan);
+
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  z-index: 58;
+
+  width: clamp(100px, 12vw, 150px);
+
+  transform: translateX(-50%) scale(1);
+  transform-origin: top center;
+
+  text-align: center;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.18s,
+    transform 0.18s,
+    filter 0.18s;
+}
+
+.moment-card.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) scale(0.78);
+}
+
+.moment-card img {
+  display: block;
+
+  width: 100%;
+  max-height: 112px;
+
+  object-fit: contain;
+
+  border-radius: 12px;
+
+  filter:
+    saturate(1.2)
+    contrast(1.08)
+    drop-shadow(0 0 12px color-mix(in srgb, var(--moment-color) 56%, transparent))
+    drop-shadow(0 0 30px color-mix(in srgb, var(--moment-color) 22%, transparent));
+}
+
+#moment-label {
+  margin-top: 6px;
+
+  color: var(--moment-color);
+
+  font-size: 9px;
+  font-weight: 950;
+
+  letter-spacing: 2px;
+
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--moment-color) 62%, transparent);
+}
+
+body.stage-sonic #scroll-world {
+  box-shadow: inset 0 0 120px rgba(33, 230, 255, 0.12);
+}
+
+body.stage-goku #scroll-world {
+  box-shadow:
+    inset 0 0 120px rgba(255, 215, 70, 0.22),
+    inset 0 0 250px rgba(255, 126, 0, 0.12);
+}
+
+body.stage-alquimia #scroll-world {
+  box-shadow:
+    inset 0 0 140px rgba(255, 43, 214, 0.17),
+    inset 0 0 260px rgba(138, 92, 255, 0.12);
+}
+
+body.stage-aura #scroll-world {
+  animation: auraBackdrop 1.25s linear infinite;
+}
+
+@keyframes auraBackdrop {
+  0% {
+    filter: hue-rotate(0deg) saturate(1.45);
+  }
+
+  100% {
+    filter: hue-rotate(360deg) saturate(1.75);
+  }
+}
+
+
+/* =========================================================
+   IMPACT FRAMES + RGB OVERDRIVE
+========================================================= */
+
+#impact-flash,
+#rgb-wash {
+  position: fixed;
+  inset: 0;
+
+  z-index: 120;
+
+  pointer-events: none;
+
+  opacity: 0;
+}
+
+#impact-flash {
+  mix-blend-mode: screen;
+}
+
+body.impact-frame #impact-flash {
+  animation: impactFrame 0.48s steps(1, end);
+}
+
+body.impact-gold #impact-flash {
+  background:
+    radial-gradient(circle at center, #ffffff 0 12%, #ffe85a 13% 28%, #ff7a00 29% 45%, transparent 47%);
+}
+
+body.impact-cyan #impact-flash {
+  background:
+    radial-gradient(circle at center, #ffffff 0 10%, #21e6ff 12% 29%, #245cff 30% 46%, transparent 48%);
+}
+
+body.impact-pink #impact-flash {
+  background:
+    radial-gradient(circle at center, #ffffff 0 10%, #ff2bd6 12% 29%, #8a5cff 30% 46%, transparent 48%);
+}
+
+body.impact-green #impact-flash {
+  background:
+    radial-gradient(circle at center, #ffffff 0 10%, #b7ff32 12% 28%, #21e6ff 29% 44%, transparent 47%);
+}
+
+@keyframes impactFrame {
+  0% {
+    opacity: 1;
+    filter: contrast(3) saturate(0);
+  }
+
+  12% {
+    opacity: 0;
+  }
+
+  24% {
+    opacity: 0.95;
+    filter: contrast(2) saturate(2);
+  }
+
+  38% {
+    opacity: 0.12;
+  }
+
+  52% {
+    opacity: 0.78;
+  }
+
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+
+body.stage-aura #rgb-wash {
+  opacity: 0.22;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(255, 0, 80, 0.55),
+      rgba(255, 210, 0, 0.35),
+      rgba(30, 255, 100, 0.5),
+      rgba(0, 220, 255, 0.55),
+      rgba(80, 60, 255, 0.48),
+      rgba(255, 0, 220, 0.5),
+      rgba(255, 0, 80, 0.55)
+    );
+
+  mix-blend-mode: screen;
+
+  animation:
+    rgbSpin 0.85s linear infinite,
+    rgbPulse 0.22s ease-in-out infinite alternate;
+}
+
+@keyframes rgbSpin {
+  to {
+    transform: rotate(360deg) scale(1.45);
+  }
+}
+
+@keyframes rgbPulse {
+  from {
+    opacity: 0.12;
+  }
+
+  to {
+    opacity: 0.31;
+  }
+}
+
+
+/* =========================================================
+   STRONGER HYPERSPACE
+========================================================= */
+
+body.hyperspace #hyperspace {
+  opacity: 1;
+
+  filter:
+    blur(0.15px)
+    saturate(1.9)
+    brightness(1.8)
+    contrast(1.2);
+
+  animation:
+    hyperspaceRushExtreme 0.105s linear infinite alternate;
+}
+
+body.hyperspace #game-screen::before {
+  content: "";
+
+  position: absolute;
+  inset: -30%;
+
+  background:
+    radial-gradient(circle at center, transparent 0 8%, rgba(255,255,255,0.08) 9% 11%, transparent 12%),
+    repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 1.7deg,
+      rgba(255,255,255,0.18) 1.8deg 1.95deg,
+      transparent 2deg 4.5deg
+    );
+
+  transform: scale(1.3);
+
+  animation: hyperspaceTunnel 0.16s linear infinite;
+
+  pointer-events: none;
+}
+
+@keyframes hyperspaceRushExtreme {
+  from {
+    transform: scale(1.08);
+  }
+
+  to {
+    transform: scale(1.28);
+  }
+}
+
+@keyframes hyperspaceTunnel {
+  from {
+    transform: scale(1.08) rotate(0deg);
+    opacity: 0.34;
+  }
+
+  to {
+    transform: scale(1.34) rotate(0.8deg);
+    opacity: 0.74;
+  }
+}
+
+body.stage-aura #hyperspace {
+  opacity: 1;
+
+  filter:
+    saturate(2.7)
+    brightness(2.15)
+    contrast(1.3)
+    hue-rotate(0deg);
+
+  animation:
+    auraHyperspace 0.1s linear infinite alternate,
+    auraHue 1s linear infinite;
+}
+
+@keyframes auraHyperspace {
+  from {
+    transform: scale(1.12) rotate(-0.2deg);
+  }
+
+  to {
+    transform: scale(1.35) rotate(0.2deg);
+  }
+}
+
+@keyframes auraHue {
+  to {
+    filter:
+      saturate(2.8)
+      brightness(2.2)
+      contrast(1.3)
+      hue-rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   BRIGHTER NEON SPEED LINES
+========================================================= */
+
+.speed-line {
+  box-shadow:
+    0 0 7px currentColor,
+    0 0 18px currentColor;
+}
+
+body.speed-3 .speed-line {
+  width: 3px;
+}
+
+body.speed-4 .speed-line {
+  width: 4px;
+}
+
+body.stage-aura .speed-line {
+  animation: auraLineHue 0.55s linear infinite;
+}
+
+@keyframes auraLineHue {
+  to {
+    filter:
+      blur(var(--speed-blur))
+      brightness(3.15)
+      saturate(2.5)
+      hue-rotate(360deg)
+      drop-shadow(0 0 26px currentColor);
+  }
+}
+
+
+/* =========================================================
+   TEXT / NUMBER IMPACT
+========================================================= */
+
+.number-pop {
+  animation: numberPop 0.24s cubic-bezier(.17,.89,.32,1.5);
+}
+
+@keyframes numberPop {
+  0% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.22) skewX(-4deg);
+    filter: brightness(2.4);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.slam-text {
+  animation: slamText 0.34s cubic-bezier(.1,.8,.2,1.3);
+}
+
+@keyframes slamText {
+  0% {
+    transform: translate(-50%, -50%) scale(2.3);
+    filter: blur(8px) brightness(3);
+    opacity: 0;
+  }
+
+  48% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+}
+
+.crumble-text {
+  animation: crumbleText 0.18s ease-in forwards;
+}
+
+@keyframes crumbleText {
+  0% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(-50%, -50%) skewX(0deg);
+    filter: blur(0);
+  }
+
+  45% {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      90% 28%,
+      100% 41%,
+      84% 57%,
+      98% 72%,
+      82% 100%,
+      0 100%,
+      8% 74%,
+      0 56%,
+      12% 37%,
+      0 18%
+    );
+    transform: translate(-50%, -50%) skewX(-8deg) scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -44%) skewX(12deg) scale(0.84);
+    filter: blur(4px);
+  }
+}
+
+body.stage-goku #score,
+body.stage-goku #speed-display {
+  color: #ffe75d;
+  text-shadow:
+    0 0 10px rgba(255, 231, 93, 0.8),
+    0 0 28px rgba(255, 145, 0, 0.65);
+}
+
+body.stage-alquimia #score,
+body.stage-alquimia #speed-display {
+  color: var(--pink);
+  text-shadow:
+    0 0 10px rgba(255, 43, 214, 0.82),
+    0 0 28px rgba(138, 92, 255, 0.62);
+}
+
+body.stage-aura #score,
+body.stage-aura #speed-display,
+body.stage-aura #combo-display {
+  animation: rgbText 0.8s linear infinite;
+}
+
+@keyframes rgbText {
+  0% {
+    color: #ff2b54;
+    text-shadow: 0 0 22px #ff2b54;
+  }
+
+  25% {
+    color: #ffe82b;
+    text-shadow: 0 0 22px #ffe82b;
+  }
+
+  50% {
+    color: #38ff79;
+    text-shadow: 0 0 22px #38ff79;
+  }
+
+  75% {
+    color: #21e6ff;
+    text-shadow: 0 0 22px #21e6ff;
+  }
+
+  100% {
+    color: #ff2bd6;
+    text-shadow: 0 0 22px #ff2bd6;
+  }
+}
+
+
+/* =========================================================
+   MOBILE MOMENT CARD
+========================================================= */
+
+@media (max-width: 600px) {
+  .moment-card {
+    top: 76px;
+    width: 92px;
+  }
+
+  .moment-card img {
+    max-height: 76px;
+  }
+
+  #moment-label {
+    font-size: 7px;
+  }
+
+  .sound-toggle {
+    left: 10px;
+    bottom: 10px;
+    padding: 9px 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.stage-aura #rgb-wash,
+  body.stage-aura #scroll-world,
+  body.stage-aura .speed-line,
+  body.hyperspace #hyperspace,
+  body.hyperspace #game-screen::before {
+    animation: none !important;
+  }
+}
