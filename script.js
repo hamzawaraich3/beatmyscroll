@@ -10,7 +10,11 @@ const BASE_SCORE_RATE = 0.045;
 const SPEED_REFERENCE = 850;
 const SPEED_CURVE = 1.25;
 const SPEED_GAIN = 1.6;
-const MAX_SPEED_MULTIPLIER = 8;
+const MAX_SCORE_MULTIPLIER = 8;
+
+// One game "scroll" is 100 normalized input units.
+// This gives us a device-agnostic-ish speed stat similar to WPM.
+const SCROLL_UNIT = 100;
 
 const BOOST_EVENT_CAP = 45;
 const BOOST_PROGRESS_COOLDOWN = 24;
@@ -23,54 +27,53 @@ const BOOST_TIERS = [
   {
     multiplier: 1.2,
     weight: 34,
-    required: 260,
-    window: 1700,
-    minRate: 900,
+    required: 180,
+    window: 2050,
+    minRate: 650,
     color: "#b7ff32"
   },
   {
     multiplier: 1.3,
     weight: 26,
-    required: 340,
-    window: 1550,
-    minRate: 1100,
+    required: 240,
+    window: 1900,
+    minRate: 800,
     color: "#21e6ff"
   },
   {
     multiplier: 1.5,
     weight: 18,
-    required: 470,
-    window: 1350,
-    minRate: 1500,
+    required: 330,
+    window: 1700,
+    minRate: 1050,
     color: "#8a5cff"
   },
   {
     multiplier: 2,
     weight: 12,
-    required: 650,
-    window: 1150,
-    minRate: 1900,
+    required: 470,
+    window: 1500,
+    minRate: 1400,
     color: "#ff2bd6"
   },
   {
     multiplier: 4,
     weight: 7,
-    required: 820,
-    window: 1000,
-    minRate: 2400,
+    required: 650,
+    window: 1300,
+    minRate: 1800,
     color: "#ff9d2e"
   },
   {
     multiplier: 5,
     weight: 3,
-    required: 980,
-    window: 900,
-    minRate: 3000,
+    required: 800,
+    window: 1150,
+    minRate: 2200,
     color: "#ff3b3b"
   }
 ];
 
-const HYPERSPACE_MULTIPLIER = 7.25;
 const HYPERSPACE_RATE = 5200;
 
 
@@ -86,12 +89,13 @@ const gameOverScreen = document.getElementById("game-over");
 
 const scoreDisplay = document.getElementById("score");
 const timerDisplay = document.getElementById("timer");
-const multiplierDisplay = document.getElementById("multiplier");
+const speedDisplay = document.getElementById("speed-display");
 const comboDisplay = document.getElementById("combo-display");
 const bestScoreDisplay = document.getElementById("best-score");
 
 const finalScoreDisplay = document.getElementById("final-score");
 const finalTimeDisplay = document.getElementById("final-time");
+const finalAvgSpeedDisplay = document.getElementById("final-avg-speed");
 const finalSpeedDisplay = document.getElementById("final-speed");
 const finalComboDisplay = document.getElementById("final-combo");
 const finalBestDisplay = document.getElementById("final-best");
@@ -130,7 +134,10 @@ let state = "waiting";
 let score = 0;
 let scrollRate = 0;
 let multiplier = 1;
-let maxMultiplier = 1;
+
+let currentSpeed = 0;
+let maxSpeed = 0;
+let totalScrollDistance = 0;
 
 let comboMultiplier = 1;
 let maxCombo = 1;
@@ -285,7 +292,7 @@ function calculateSpeedMultiplier() {
   return (
     1 +
     Math.min(
-      MAX_SPEED_MULTIPLIER - 1,
+      MAX_SCORE_MULTIPLIER - 1,
       Math.pow(normalized, SPEED_CURVE) * SPEED_GAIN
     )
   );
@@ -300,8 +307,12 @@ function updateHUD() {
   distanceMarker.textContent =
     roundedScore.toLocaleString();
 
-  multiplierDisplay.textContent =
-    multiplier.toFixed(2) + "×";
+  currentSpeed =
+    Math.max(0, scrollRate) / SCROLL_UNIT;
+
+  speedDisplay.innerHTML =
+    currentSpeed.toFixed(1) +
+    ' <small>scrolls/s</small>';
 
   comboDisplay.textContent =
     formatCombo(comboMultiplier);
@@ -433,7 +444,7 @@ function updateBoost(now) {
 
   const timeRatio =
     clamp(
-      (now - boostStartedAt) / BOOST_WINDOW,
+      (now - boostStartedAt) / currentBoostTier.window,
       0,
       1
     );
@@ -482,7 +493,10 @@ function startGame() {
   score = 0;
   scrollRate = 0;
   multiplier = 1;
-  maxMultiplier = 1;
+
+  currentSpeed = 0;
+  maxSpeed = 0;
+  totalScrollDistance = 0;
 
   comboMultiplier = 1;
   maxCombo = 1;
@@ -563,8 +577,13 @@ function handleScrollInput(amount) {
   multiplier =
     calculateSpeedMultiplier();
 
-  maxMultiplier =
-    Math.max(maxMultiplier, multiplier);
+  currentSpeed =
+    Math.max(0, scrollRate) / SCROLL_UNIT;
+
+  maxSpeed =
+    Math.max(maxSpeed, currentSpeed);
+
+  totalScrollDistance += amount;
 
   if (
     boostActive &&
@@ -828,8 +847,8 @@ function gameLoop(now) {
     multiplier =
       calculateSpeedMultiplier();
 
-    maxMultiplier =
-      Math.max(maxMultiplier, multiplier);
+    currentSpeed =
+      Math.max(0, scrollRate) / SCROLL_UNIT;
 
     if (
       comboMultiplier > 1 &&
@@ -949,20 +968,19 @@ function gameLoop(now) {
       "speed-4"
     );
 
-    if (multiplier >= 2.2) {
+    if (currentSpeed >= 10) {
       body.classList.add("speed-2");
     }
 
-    if (multiplier >= 4) {
+    if (currentSpeed >= 24) {
       body.classList.add("speed-3");
     }
 
-    if (multiplier >= 6) {
+    if (currentSpeed >= 40) {
       body.classList.add("speed-4");
     }
 
     const hyperspace =
-      multiplier >= HYPERSPACE_MULTIPLIER &&
       scrollRate >= HYPERSPACE_RATE;
 
     body.classList.toggle(
@@ -1015,8 +1033,21 @@ function endGame(now) {
   finalTimeDisplay.textContent =
     (finalElapsed / 1000).toFixed(1) + "s";
 
+  const activeSeconds =
+    Math.max(
+      (lastInputTime - startTime) / 1000,
+      0.001
+    );
+
+  const averageSpeed =
+    (totalScrollDistance / SCROLL_UNIT) /
+    activeSeconds;
+
+  finalAvgSpeedDisplay.textContent =
+    averageSpeed.toFixed(1) + "/s";
+
   finalSpeedDisplay.textContent =
-    maxMultiplier.toFixed(2) + "×";
+    maxSpeed.toFixed(1) + "/s";
 
   finalComboDisplay.textContent =
     formatCombo(maxCombo);
@@ -1073,7 +1104,10 @@ function resetGame() {
   score = 0;
   scrollRate = 0;
   multiplier = 1;
-  maxMultiplier = 1;
+
+  currentSpeed = 0;
+  maxSpeed = 0;
+  totalScrollDistance = 0;
 
   comboMultiplier = 1;
   maxCombo = 1;
@@ -1093,7 +1127,8 @@ function resetGame() {
 
   scoreDisplay.textContent = "0";
   timerDisplay.textContent = "0.0s";
-  multiplierDisplay.textContent = "1.00×";
+  speedDisplay.innerHTML =
+    '0.0 <small>scrolls/s</small>';
   comboDisplay.textContent = "×1";
   distanceMarker.textContent = "0";
 
@@ -1172,7 +1207,9 @@ shareButton.addEventListener(
       roundedScore.toLocaleString() +
       " on BeatMyScroll and lasted " +
       seconds +
-      " seconds. Think you can beat me?";
+      " seconds with a max speed of " +
+      maxSpeed.toFixed(1) +
+      " scrolls/s. Think you can beat me?";
 
     const shareData = {
       title: "Beat My Scroll",
