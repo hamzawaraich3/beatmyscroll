@@ -76,6 +76,21 @@ const BOOST_TIERS = [
 
 const HYPERSPACE_RATE = 5200;
 
+const SONIC_AVG_SPEED = 10;
+const SONIC_CURRENT_SPEED = 12;
+
+const GOKU_CURRENT_SPEED = 27;
+const GOKU_AVG_SPEED = 14;
+const GOKU_TRIGGER_HOLD = 700;
+const GOKU_DURATION = 5000;
+
+const NEAR_MAX_MIN_SPEED = 35;
+const NEAR_MAX_TOLERANCE = 20;
+const ALQUIMIA_HOLD = 5500;
+const AURA_HOLD = 11000;
+const AURA_SLOW_EXIT_SPEED = 25;
+const STAGE_DROP_GRACE = 1200;
+
 
 /* =========================================================
    ELEMENTS
@@ -124,6 +139,11 @@ const boostProgressDisplay = document.getElementById("boost-progress");
 const boostRewardDisplay = document.getElementById("boost-reward");
 const boostToast = document.getElementById("boost-toast");
 
+const momentCard = document.getElementById("moment-card");
+const momentImage = document.getElementById("moment-image");
+const momentLabel = document.getElementById("moment-label");
+const soundToggle = document.getElementById("sound-toggle");
+
 
 /* =========================================================
    GAME STATE
@@ -168,6 +188,18 @@ let boostToastTimer = null;
 let lastBoostProgressAt = 0;
 let currentBoostTier = BOOST_TIERS[0];
 
+let powerStage = "normal";
+let gokuTriggered = false;
+let gokuUntil = 0;
+let highBurstStart = 0;
+let nearMaxHoldStart = 0;
+let stageDropStart = 0;
+let wasHyperspace = false;
+
+let lastScorePopBucket = -1;
+let lastSpeedPopBucket = -1;
+let messageAnimTimer = null;
+
 const urlParams = new URLSearchParams(window.location.search);
 const parsedChallengeScore = Number(urlParams.get("score"));
 
@@ -178,6 +210,241 @@ const challengeScore =
 
 let challengeBeaten = false;
 let challengeMessageLockUntil = 0;
+
+
+/* =========================================================
+   MEDIA + SOUND
+========================================================= */
+
+const MEDIA = {
+  sonicImage: "assets/sonic-running.gif",
+  gokuImage: "assets/goku-super-saiyan.gif",
+  knightImage: "assets/female-knight.webp",
+  auraImage: "assets/aura-green-guy.webp",
+
+  click: "assets/ui-click.mp3",
+  sonic: "assets/sonic-fast.mp3",
+  goku: "assets/goku-powerup.mp3",
+  alquimia: "assets/alquimia.mp3",
+  aura: "assets/aura-monster.mp3",
+  fahh: "assets/game-over-fahh.mp3"
+};
+
+let audioBank = null;
+let currentMusicKey = null;
+let audioUnlocked = false;
+
+let soundEnabled =
+  localStorage.getItem("beatMyScrollSound") !== "off";
+
+function ensureAudioBank() {
+  if (audioBank) return;
+
+  audioBank = {
+    click: new Audio(MEDIA.click),
+    sonic: new Audio(MEDIA.sonic),
+    goku: new Audio(MEDIA.goku),
+    alquimia: new Audio(MEDIA.alquimia),
+    aura: new Audio(MEDIA.aura),
+    fahh: new Audio(MEDIA.fahh)
+  };
+
+  audioBank.click.volume = 0.48;
+  audioBank.sonic.volume = 0.50;
+  audioBank.goku.volume = 0.72;
+  audioBank.alquimia.volume = 0.56;
+  audioBank.aura.volume = 0.62;
+  audioBank.fahh.volume = 0.88;
+
+  audioBank.sonic.loop = true;
+  audioBank.alquimia.loop = true;
+  audioBank.aura.loop = true;
+
+  Object.values(audioBank).forEach(function(track) {
+    track.preload = "auto";
+  });
+}
+
+function updateSoundButton() {
+  soundToggle.textContent =
+    soundEnabled
+      ? (audioUnlocked ? "SOUND: ON" : "TAP FOR SOUND")
+      : "SOUND: OFF";
+
+  soundToggle.classList.toggle(
+    "muted",
+    !soundEnabled
+  );
+}
+
+function unlockAudio() {
+  if (!soundEnabled || audioUnlocked) return;
+
+  ensureAudioBank();
+
+  const click = audioBank.click;
+  const oldVolume = click.volume;
+
+  click.volume = 0.001;
+  click.currentTime = 0;
+
+  const attempt = click.play();
+
+  if (attempt && typeof attempt.then === "function") {
+    attempt
+      .then(function() {
+        click.pause();
+        click.currentTime = 0;
+        click.volume = oldVolume;
+        audioUnlocked = true;
+        updateSoundButton();
+      })
+      .catch(function() {
+        click.volume = oldVolume;
+        updateSoundButton();
+      });
+  }
+}
+
+function stopAudioTrack(track, reset) {
+  if (!track) return;
+
+  track.pause();
+
+  if (reset !== false) {
+    try {
+      track.currentTime = 0;
+    } catch (error) {
+      // Ignore media seek failures before metadata loads.
+    }
+  }
+}
+
+function stopMusic() {
+  if (!audioBank) return;
+
+  ["sonic", "alquimia", "aura"].forEach(
+    function(key) {
+      stopAudioTrack(audioBank[key], true);
+    }
+  );
+
+  currentMusicKey = null;
+}
+
+function playMusic(key) {
+  if (!soundEnabled) return;
+
+  ensureAudioBank();
+
+  if (
+    currentMusicKey === key &&
+    !audioBank[key].paused
+  ) {
+    return;
+  }
+
+  stopMusic();
+
+  currentMusicKey = key;
+
+  const track = audioBank[key];
+  track.currentTime = 0;
+
+  const attempt = track.play();
+
+  if (attempt && typeof attempt.catch === "function") {
+    attempt.catch(function() {
+      currentMusicKey = null;
+      updateSoundButton();
+    });
+  }
+}
+
+function playSfx(key, playbackRate) {
+  if (!soundEnabled) return;
+
+  ensureAudioBank();
+
+  const original = audioBank[key];
+
+  if (!original) return;
+
+  const sound = original.cloneNode();
+  sound.volume = original.volume;
+  sound.playbackRate = playbackRate || 1;
+
+  const attempt = sound.play();
+
+  if (attempt && typeof attempt.catch === "function") {
+    attempt.catch(function() {
+      updateSoundButton();
+    });
+  }
+}
+
+function stopAllAudio() {
+  if (!audioBank) return;
+
+  Object.values(audioBank).forEach(
+    function(track) {
+      stopAudioTrack(track, true);
+    }
+  );
+
+  currentMusicKey = null;
+}
+
+soundToggle.addEventListener(
+  "click",
+  function() {
+    soundEnabled = !soundEnabled;
+
+    localStorage.setItem(
+      "beatMyScrollSound",
+      soundEnabled ? "on" : "off"
+    );
+
+    if (soundEnabled) {
+      audioUnlocked = false;
+      unlockAudio();
+
+      setTimeout(function() {
+        playSfx("click");
+      }, 30);
+
+      if (state === "playing") {
+        syncStageMedia();
+      }
+    } else {
+      stopAllAudio();
+    }
+
+    updateSoundButton();
+  }
+);
+
+["pointerdown", "touchstart", "keydown"].forEach(
+  function(eventName) {
+    window.addEventListener(
+      eventName,
+      unlockAudio,
+      {
+        passive: true,
+        once: false
+      }
+    );
+  }
+);
+
+momentImage.addEventListener(
+  "error",
+  function() {
+    momentCard.classList.add("hidden");
+  }
+);
+
+updateSoundButton();
 
 
 /* =========================================================
@@ -289,6 +556,374 @@ function pickBoostTier() {
   return BOOST_TIERS[0];
 }
 
+function getAverageSpeed(now) {
+  if (state !== "playing") {
+    return 0;
+  }
+
+  const seconds =
+    Math.max(
+      (now - startTime) / 1000,
+      0.001
+    );
+
+  return (
+    totalScrollDistance /
+    SCROLL_UNIT /
+    seconds
+  );
+}
+
+function animateNumber(element) {
+  element.classList.remove("number-pop");
+
+  void element.offsetWidth;
+
+  element.classList.add("number-pop");
+
+  setTimeout(function() {
+    element.classList.remove("number-pop");
+  }, 260);
+}
+
+function slamGameMessage(message, color) {
+  if (messageAnimTimer) {
+    clearTimeout(messageAnimTimer);
+  }
+
+  gameMessage.classList.remove(
+    "crumble-text",
+    "slam-text"
+  );
+
+  gameMessage.textContent = message;
+  gameMessage.style.color = color || "";
+
+  void gameMessage.offsetWidth;
+
+  gameMessage.classList.add("slam-text");
+
+  messageAnimTimer = setTimeout(
+    function() {
+      gameMessage.classList.remove("slam-text");
+    },
+    380
+  );
+}
+
+function crumbleToMessage(message) {
+  if (messageAnimTimer) {
+    clearTimeout(messageAnimTimer);
+  }
+
+  gameMessage.classList.remove("slam-text");
+  gameMessage.classList.add("crumble-text");
+
+  messageAnimTimer = setTimeout(
+    function() {
+      gameMessage.classList.remove("crumble-text");
+      gameMessage.textContent = message;
+      gameMessage.style.color = "";
+
+      void gameMessage.offsetWidth;
+
+      gameMessage.classList.add("slam-text");
+
+      messageAnimTimer = setTimeout(
+        function() {
+          gameMessage.classList.remove("slam-text");
+        },
+        360
+      );
+    },
+    175
+  );
+}
+
+function triggerImpact(kind) {
+  body.classList.remove(
+    "impact-frame",
+    "impact-gold",
+    "impact-cyan",
+    "impact-pink",
+    "impact-green"
+  );
+
+  void body.offsetWidth;
+
+  body.classList.add(
+    "impact-frame",
+    "impact-" + kind
+  );
+
+  setTimeout(function() {
+    body.classList.remove(
+      "impact-frame",
+      "impact-gold",
+      "impact-cyan",
+      "impact-pink",
+      "impact-green"
+    );
+  }, 520);
+}
+
+function showMoment(image, label, color) {
+  momentCard.style.setProperty(
+    "--moment-color",
+    color
+  );
+
+  momentImage.src = image;
+  momentImage.alt = label;
+  momentLabel.textContent = label;
+
+  momentCard.classList.remove("hidden");
+}
+
+function hideMoment() {
+  momentCard.classList.add("hidden");
+}
+
+function syncStageMedia() {
+  if (!soundEnabled) return;
+
+  if (powerStage === "sonic") {
+    playMusic("sonic");
+  } else if (powerStage === "alquimia") {
+    playMusic("alquimia");
+  } else if (powerStage === "aura") {
+    playMusic("aura");
+  } else if (
+    powerStage === "normal" ||
+    powerStage === "goku"
+  ) {
+    stopMusic();
+  }
+}
+
+function setPowerStage(nextStage, now) {
+  if (powerStage === nextStage) return;
+
+  powerStage = nextStage;
+
+  body.classList.remove(
+    "stage-sonic",
+    "stage-goku",
+    "stage-alquimia",
+    "stage-aura"
+  );
+
+  if (nextStage === "normal") {
+    hideMoment();
+    stopMusic();
+    return;
+  }
+
+  body.classList.add(
+    "stage-" + nextStage
+  );
+
+  if (nextStage === "sonic") {
+    showMoment(
+      MEDIA.sonicImage,
+      "GOTTA GO FAST",
+      "#21e6ff"
+    );
+
+    playMusic("sonic");
+  }
+
+  if (nextStage === "goku") {
+    stopMusic();
+
+    showMoment(
+      MEDIA.gokuImage,
+      "POWERING UP",
+      "#ffe75d"
+    );
+
+    playSfx("goku");
+
+    gokuUntil =
+      now + GOKU_DURATION;
+
+    triggerImpact("gold");
+    slamGameMessage("POWER UP", "#ffe75d");
+  }
+
+  if (nextStage === "alquimia") {
+    showMoment(
+      MEDIA.knightImage,
+      "LOCKED IN",
+      "#ff2bd6"
+    );
+
+    playMusic("alquimia");
+
+    triggerImpact("pink");
+    slamGameMessage("LOCKED IN", "#ff2bd6");
+  }
+
+  if (nextStage === "aura") {
+    showMoment(
+      MEDIA.auraImage,
+      "AURA MODE",
+      "#b7ff32"
+    );
+
+    playMusic("aura");
+
+    triggerImpact("green");
+    slamGameMessage("AURA MONSTER", "#b7ff32");
+  }
+}
+
+function updatePowerStage(now) {
+  const averageSpeed =
+    getAverageSpeed(now);
+
+  const sonicReady =
+    averageSpeed >= SONIC_AVG_SPEED &&
+    currentSpeed >= SONIC_CURRENT_SPEED;
+
+  const gokuReady =
+    averageSpeed >= GOKU_AVG_SPEED &&
+    currentSpeed >= GOKU_CURRENT_SPEED;
+
+  if (!gokuTriggered) {
+    if (gokuReady) {
+      if (!highBurstStart) {
+        highBurstStart = now;
+      }
+
+      if (
+        now - highBurstStart >=
+        GOKU_TRIGGER_HOLD
+      ) {
+        gokuTriggered = true;
+        setPowerStage("goku", now);
+      }
+    } else {
+      highBurstStart = 0;
+    }
+  }
+
+  const recentPeak =
+    Math.min(maxSpeed, 75);
+
+  const nearMaxThreshold =
+    Math.max(
+      NEAR_MAX_MIN_SPEED,
+      recentPeak - NEAR_MAX_TOLERANCE
+    );
+
+  const nearMax =
+    currentSpeed >= nearMaxThreshold;
+
+  if (nearMax) {
+    stageDropStart = 0;
+
+    if (!nearMaxHoldStart) {
+      nearMaxHoldStart = now;
+    }
+  } else if (powerStage !== "aura") {
+    if (
+      powerStage === "alquimia"
+    ) {
+      if (!stageDropStart) {
+        stageDropStart = now;
+      }
+
+      if (
+        now - stageDropStart >=
+        STAGE_DROP_GRACE
+      ) {
+        nearMaxHoldStart = 0;
+
+        setPowerStage(
+          sonicReady ? "sonic" : "normal",
+          now
+        );
+      }
+    } else if (powerStage !== "goku") {
+      nearMaxHoldStart = 0;
+    }
+  }
+
+  const heldNearMax =
+    nearMaxHoldStart
+      ? now - nearMaxHoldStart
+      : 0;
+
+  if (powerStage === "aura") {
+    if (currentSpeed < AURA_SLOW_EXIT_SPEED) {
+      if (!stageDropStart) {
+        stageDropStart = now;
+      }
+
+      if (
+        now - stageDropStart >=
+        STAGE_DROP_GRACE
+      ) {
+        nearMaxHoldStart = 0;
+        stageDropStart = 0;
+
+        setPowerStage(
+          sonicReady ? "sonic" : "normal",
+          now
+        );
+      }
+    } else {
+      stageDropStart = 0;
+    }
+
+    return;
+  }
+
+  if (
+    gokuTriggered &&
+    heldNearMax >= AURA_HOLD
+  ) {
+    setPowerStage("aura", now);
+    return;
+  }
+
+  if (
+    gokuTriggered &&
+    heldNearMax >= ALQUIMIA_HOLD &&
+    powerStage !== "goku"
+  ) {
+    setPowerStage("alquimia", now);
+    return;
+  }
+
+  if (powerStage === "goku") {
+    if (now < gokuUntil) {
+      return;
+    }
+
+    if (heldNearMax >= ALQUIMIA_HOLD) {
+      setPowerStage("alquimia", now);
+    } else {
+      setPowerStage(
+        sonicReady ? "sonic" : "normal",
+        now
+      );
+    }
+
+    return;
+  }
+
+  if (
+    powerStage !== "alquimia"
+  ) {
+    setPowerStage(
+      sonicReady ? "sonic" : "normal",
+      now
+    );
+  }
+}
+
 function calculateSpeedMultiplier() {
   const normalized =
     Math.max(0, scoringRate) / SPEED_REFERENCE;
@@ -311,12 +946,34 @@ function updateHUD() {
   distanceMarker.textContent =
     roundedScore.toLocaleString();
 
+  const scorePopBucket =
+    Math.floor(roundedScore / 100);
+
+  if (scorePopBucket > lastScorePopBucket) {
+    lastScorePopBucket = scorePopBucket;
+
+    if (roundedScore > 0) {
+      animateNumber(scoreDisplay);
+    }
+  }
+
   currentSpeed =
     Math.max(0, scrollRate) / SCROLL_UNIT;
 
   speedDisplay.innerHTML =
     currentSpeed.toFixed(1) +
     ' <small>scrolls/s</small>';
+
+  const speedPopBucket =
+    Math.floor(currentSpeed / 10);
+
+  if (
+    speedPopBucket > lastSpeedPopBucket &&
+    currentSpeed >= 10
+  ) {
+    lastSpeedPopBucket = speedPopBucket;
+    animateNumber(speedDisplay);
+  }
 
   comboDisplay.textContent =
     formatCombo(comboMultiplier);
@@ -331,17 +988,11 @@ function updateHUD() {
 
     challengeTarget.classList.add("hidden");
 
-    gameMessage.textContent = "TARGET DESTROYED";
-    gameMessage.style.color = "#b7ff32";
-    gameMessage.style.opacity = "1";
-    gameMessage.style.transform =
-      "translate(-50%, -50%) scale(1.08)";
-
-    setTimeout(function() {
-      gameMessage.style.transform =
-        "translate(-50%, -50%) scale(1)";
-      gameMessage.style.color = "";
-    }, 900);
+    triggerImpact("green");
+    slamGameMessage(
+      "TARGET DESTROYED",
+      "#b7ff32"
+    );
   }
 }
 
@@ -518,6 +1169,17 @@ function startGame() {
   challengeBeaten = false;
   challengeMessageLockUntil = 0;
 
+  powerStage = "normal";
+  gokuTriggered = false;
+  gokuUntil = 0;
+  highBurstStart = 0;
+  nearMaxHoldStart = 0;
+  stageDropStart = 0;
+  wasHyperspace = false;
+
+  lastScorePopBucket = -1;
+  lastSpeedPopBucket = -1;
+
   startTime = now;
   lastInputTime = now;
   lastInputEventTime = 0;
@@ -534,7 +1196,16 @@ function startGame() {
   gameScreen.classList.add("active");
 
   body.classList.add("playing");
-  body.classList.remove("hyperspace");
+
+  body.classList.remove(
+    "hyperspace",
+    "stage-sonic",
+    "stage-goku",
+    "stage-alquimia",
+    "stage-aura"
+  );
+
+  unlockAudio();
 
   gameMessage.textContent = "GO.";
   gameMessage.style.color = "";
@@ -792,23 +1463,7 @@ function updateMessage() {
       ];
   }
 
-  gameMessage.style.opacity = "0";
-  gameMessage.style.transform =
-    "translate(-50%, -50%) scale(1.12)";
-
-  setTimeout(
-    function() {
-      if (performance.now() < challengeMessageLockUntil) {
-        return;
-      }
-
-      gameMessage.textContent = message;
-      gameMessage.style.opacity = "1";
-      gameMessage.style.transform =
-        "translate(-50%, -50%) scale(1)";
-    },
-    80
-  );
+  crumbleToMessage(message);
 }
 
 
@@ -869,6 +1524,8 @@ function gameLoop(now) {
 
     currentSpeed =
       Math.max(0, scrollRate) / SCROLL_UNIT;
+
+    updatePowerStage(now);
 
     if (
       comboMultiplier > 1 &&
@@ -1001,12 +1658,23 @@ function gameLoop(now) {
     }
 
     const hyperspace =
+      powerStage === "aura" ||
       scrollRate >= HYPERSPACE_RATE;
 
     body.classList.toggle(
       "hyperspace",
       hyperspace
     );
+
+    if (hyperspace && !wasHyperspace) {
+      triggerImpact(
+        powerStage === "aura"
+          ? "green"
+          : "cyan"
+      );
+    }
+
+    wasHyperspace = hyperspace;
 
     updateHUD();
   }
@@ -1088,12 +1756,22 @@ function endGame(now) {
   boostTarget.classList.add("hidden");
   challengeTarget.classList.add("hidden");
 
+  stopAllAudio();
+  playSfx("fahh");
+
+  hideMoment();
+  triggerImpact("pink");
+
   body.classList.remove(
     "playing",
     "speed-2",
     "speed-3",
     "speed-4",
-    "hyperspace"
+    "hyperspace",
+    "stage-sonic",
+    "stage-goku",
+    "stage-alquimia",
+    "stage-aura"
   );
 
   gameScreen.classList.remove("active");
@@ -1141,6 +1819,20 @@ function resetGame() {
   challengeBeaten = false;
   challengeMessageLockUntil = 0;
 
+  powerStage = "normal";
+  gokuTriggered = false;
+  gokuUntil = 0;
+  highBurstStart = 0;
+  nearMaxHoldStart = 0;
+  stageDropStart = 0;
+  wasHyperspace = false;
+
+  lastScorePopBucket = -1;
+  lastSpeedPopBucket = -1;
+
+  stopAllAudio();
+  hideMoment();
+
   boostActive = false;
   boostProgress = 0;
   lastBoostProgressAt = 0;
@@ -1185,7 +1877,11 @@ function resetGame() {
     "speed-2",
     "speed-3",
     "speed-4",
-    "hyperspace"
+    "hyperspace",
+    "stage-sonic",
+    "stage-goku",
+    "stage-alquimia",
+    "stage-aura"
   );
 
   gameOverScreen.classList.remove("active");
@@ -1201,6 +1897,8 @@ function resetGame() {
 retryButton.addEventListener(
   "click",
   function() {
+    unlockAudio();
+    playSfx("click");
     resetGame();
   }
 );
@@ -1213,6 +1911,9 @@ retryButton.addEventListener(
 shareButton.addEventListener(
   "click",
   async function() {
+    unlockAudio();
+    playSfx("click");
+
     const roundedScore =
       Math.floor(score);
 
