@@ -132,7 +132,11 @@ const boostToast = document.getElementById("boost-toast");
 let state = "waiting";
 
 let score = 0;
+
+// scrollRate = uncapped raw input speed for stats / visuals.
+// scoringRate = normalized capped speed for fair score scaling.
 let scrollRate = 0;
+let scoringRate = 0;
 let multiplier = 1;
 
 let currentSpeed = 0;
@@ -287,7 +291,7 @@ function pickBoostTier() {
 
 function calculateSpeedMultiplier() {
   const normalized =
-    Math.max(0, scrollRate) / SPEED_REFERENCE;
+    Math.max(0, scoringRate) / SPEED_REFERENCE;
 
   return (
     1 +
@@ -492,6 +496,7 @@ function startGame() {
 
   score = 0;
   scrollRate = 0;
+  scoringRate = 0;
   multiplier = 1;
 
   currentSpeed = 0;
@@ -547,11 +552,13 @@ function handleScrollInput(amount) {
 
   const signedAmount = amount;
 
-  amount = Math.abs(amount);
+  const rawAmount =
+    Math.abs(amount);
 
-  if (amount < 1) return;
+  if (rawAmount < 1) return;
 
-  amount = Math.min(amount, MAX_INPUT);
+  amount =
+    Math.min(rawAmount, MAX_INPUT);
 
   if (state === "waiting") {
     startGame();
@@ -559,19 +566,29 @@ function handleScrollInput(amount) {
 
   const now = performance.now();
 
-  const eventDelta =
+  const rawEventDelta =
     lastInputEventTime > 0
-      ? clamp(now - lastInputEventTime, 16, 250)
+      ? clamp(now - lastInputEventTime, 1, 250)
       : 100;
+
+  const scoringEventDelta =
+    clamp(rawEventDelta, 16, 250);
 
   lastInputEventTime = now;
   lastInputTime = now;
 
+  const instantRawRate =
+    (rawAmount / rawEventDelta) * 1000;
+
   const instantRate =
-    (amount / eventDelta) * 1000;
+    (amount / scoringEventDelta) * 1000;
 
   scrollRate =
     scrollRate * 0.72 +
+    instantRawRate * 0.28;
+
+  scoringRate =
+    scoringRate * 0.72 +
     instantRate * 0.28;
 
   multiplier =
@@ -583,7 +600,7 @@ function handleScrollInput(amount) {
   maxSpeed =
     Math.max(maxSpeed, currentSpeed);
 
-  totalScrollDistance += amount;
+  totalScrollDistance += rawAmount;
 
   if (
     boostActive &&
@@ -842,6 +859,9 @@ function gameLoop(now) {
 
     // Current speed fades if the player eases off.
     scrollRate *=
+      Math.exp(-frameDelta / 360);
+
+    scoringRate *=
       Math.exp(-frameDelta / 360);
 
     multiplier =
@@ -1103,6 +1123,7 @@ function resetGame() {
 
   score = 0;
   scrollRate = 0;
+  scoringRate = 0;
   multiplier = 1;
 
   currentSpeed = 0;
