@@ -24,6 +24,7 @@
   let screenGeneration = 0;
   let submitting = false;
   let boardLoaded = false;
+  let boardRevision = 0;
 
   function showFeedback(message, error = false) {
     feedback.textContent = message || "";
@@ -146,10 +147,14 @@
   }
 
   async function loadLeaderboard() {
+    const revision = ++boardRevision;
+
     try {
       const data = await api("/api/leaderboard");
+      if (revision !== boardRevision) return;
       setBoards(data);
     } catch (error) {
+      if (revision !== boardRevision) return;
       boardLoaded = false;
       list.replaceChildren();
       const item = document.createElement("li");
@@ -190,10 +195,14 @@
       });
 
       currentPlayer = result.username;
-      updateIdentity();
-      showForm(false);
+      ++boardRevision;
       setBoards(result.leaderboards);
-      showFeedback("SAVED! Your best scores will update after future runs.");
+
+      if (generation === screenGeneration) {
+        updateIdentity();
+        showForm(false);
+        showFeedback("SAVED! Your best scores will update after future runs.");
+      }
     } catch (error) {
       if (generation !== screenGeneration) return;
 
