@@ -12,16 +12,19 @@ const SPEED_CURVE = 1.25;
 const SPEED_GAIN = 1.6;
 const MAX_SPEED_MULTIPLIER = 8;
 
-const BOOST_REQUIRED = 650;
-const BOOST_WINDOW = 1250;
+const BOOST_REQUIRED = 900;
+const BOOST_WINDOW = 950;
+const BOOST_EVENT_CAP = 45;
+const BOOST_MIN_RATE = 2200;
+const BOOST_PROGRESS_COOLDOWN = 24;
 const BOOST_FIRST_DELAY = 4000;
 const BOOST_MIN_GAP = 3400;
 const BOOST_MAX_GAP = 5200;
 const COMBO_MAX = 5;
 const COMBO_DURATION = 7000;
 
-const HYPERSPACE_MULTIPLIER = 6.25;
-const HYPERSPACE_RATE = 2600;
+const HYPERSPACE_MULTIPLIER = 7.25;
+const HYPERSPACE_RATE = 5200;
 
 
 /* =========================================================
@@ -103,6 +106,7 @@ let boostStartedAt = 0;
 let boostDeadline = 0;
 let nextBoostAt = Infinity;
 let boostToastTimer = null;
+let lastBoostProgressAt = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const parsedChallengeScore = Number(urlParams.get("score"));
@@ -172,7 +176,7 @@ for (let i = 0; i < 36; i++) {
 
   line.className = "speed-line";
   line.style.left = (Math.random() * 100) + "%";
-  line.style.height = (50 + Math.random() * 190) + "px";
+  line.style.height = (12 + Math.random() * 44) + "px";
   line.dataset.offset = Math.random() * window.innerHeight;
 
   speedLinesContainer.appendChild(line);
@@ -265,6 +269,7 @@ function spawnBoost(now) {
 
   boostActive = true;
   boostProgress = 0;
+  lastBoostProgressAt = 0;
   boostStartedAt = now;
   boostDeadline = now + BOOST_WINDOW;
 
@@ -434,6 +439,8 @@ function startGame() {
 function handleScrollInput(amount) {
   if (state === "gameover") return;
 
+  const signedAmount = amount;
+
   amount = Math.abs(amount);
 
   if (amount < 1) return;
@@ -467,8 +474,29 @@ function handleScrollInput(amount) {
   maxMultiplier =
     Math.max(maxMultiplier, multiplier);
 
-  if (boostActive) {
-    boostProgress += amount;
+  if (
+    boostActive &&
+    signedAmount > 0 &&
+    instantRate >= BOOST_MIN_RATE &&
+    (
+      lastBoostProgressAt === 0 ||
+      now - lastBoostProgressAt >= BOOST_PROGRESS_COOLDOWN
+    )
+  ) {
+    lastBoostProgressAt = now;
+
+    const rushAmount =
+      Math.min(amount, BOOST_EVENT_CAP);
+
+    const rateBonus =
+      clamp(
+        instantRate / 5000,
+        0.8,
+        1.35
+      );
+
+    boostProgress +=
+      rushAmount * rateBonus;
 
     if (boostProgress >= BOOST_REQUIRED) {
       finishBoost(true, now);
@@ -703,7 +731,7 @@ function gameLoop(now) {
 
     // Current speed fades if the player eases off.
     scrollRate *=
-      Math.exp(-frameDelta / 650);
+      Math.exp(-frameDelta / 360);
 
     multiplier =
       calculateSpeedMultiplier();
@@ -732,10 +760,9 @@ function gameLoop(now) {
 
     const targetVelocity =
       clamp(
-        5 +
-        scrollRate / 10,
-        5,
-        320
+        scrollRate / 11,
+        0,
+        340
       );
 
     velocity +=
@@ -752,14 +779,48 @@ function gameLoop(now) {
     grid.style.backgroundPosition =
       "0 " + gridMovement + "px";
 
-    const lineOpacity =
-      Math.min(
-        velocity / 125,
-        0.92
+    const speedIntensity =
+      clamp(
+        scrollRate / 5200,
+        0,
+        1
       );
+
+    const lineOpacity =
+      0.10 +
+      speedIntensity * 0.84;
+
+    const lineStretch =
+      0.65 +
+      speedIntensity * 10.5;
+
+    const lineBlur =
+      speedIntensity * 1.8;
+
+    const lineBrightness =
+      0.75 +
+      speedIntensity * 1.9;
 
     speedLinesContainer.style.opacity =
       lineOpacity;
+
+    speedLinesContainer.style.setProperty(
+      "--speed-blur",
+      lineBlur.toFixed(2) + "px"
+    );
+
+    speedLinesContainer.style.setProperty(
+      "--speed-brightness",
+      lineBrightness.toFixed(2)
+    );
+
+    speedLinesContainer.style.setProperty(
+      "--speed-glow",
+      (
+        3 +
+        speedIntensity * 16
+      ).toFixed(1) + "px"
+    );
 
     speedLines.forEach(
       function(line, index) {
@@ -771,8 +832,9 @@ function gameLoop(now) {
             startingPoint +
             visualDistance *
             (
-              0.7 +
-              index / 38
+              0.42 +
+              speedIntensity * 1.25 +
+              index / 65
             )
           ) %
           (
@@ -781,7 +843,11 @@ function gameLoop(now) {
           );
 
         line.style.transform =
-          "translateY(" + (y - 280) + "px)";
+          "translateY(" +
+          (y - 120) +
+          "px) scaleY(" +
+          lineStretch.toFixed(2) +
+          ")";
       }
     );
 
@@ -930,6 +996,7 @@ function resetGame() {
 
   boostActive = false;
   boostProgress = 0;
+  lastBoostProgressAt = 0;
   nextBoostAt = Infinity;
 
   scoreDisplay.textContent = "0";
