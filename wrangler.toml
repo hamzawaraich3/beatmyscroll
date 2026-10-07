@@ -1,0 +1,17 @@
+name = "beatmyscroll"
+main = "./worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[durable_objects.bindings]]
+name = "LEADERBOARD"
+class_name = "LeaderboardStore"
+
+[[migrations]]
+tag = "leaderboard_sqlite_v1"
+new_sqlite_classes = ["LeaderboardStore"]
