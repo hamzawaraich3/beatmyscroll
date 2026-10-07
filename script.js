@@ -79,6 +79,7 @@ const challengeScore =
     : 0;
 
 let challengeBeaten = false;
+let challengeMessageLockUntil = 0;
 
 
 /* =========================================================
@@ -435,6 +436,7 @@ function updateHUD() {
     roundedScore >= challengeScore
   ) {
     challengeBeaten = true;
+    challengeMessageLockUntil = performance.now() + 1200;
     challengeTarget.classList.add("hidden");
 
     gameMessage.textContent = "TARGET DESTROYED";
@@ -456,6 +458,10 @@ function updateHUD() {
 ========================================================= */
 
 function updateMessage() {
+
+  if (performance.now() < challengeMessageLockUntil) {
+    return;
+  }
 
   const milestone =
     Math.floor(score / 2500);
@@ -788,6 +794,7 @@ function resetGame() {
 
   previousTouchY = null;
   challengeBeaten = false;
+  challengeMessageLockUntil = 0;
 
   scoreDisplay.textContent = "0";
   timerDisplay.textContent = "0.0s";
