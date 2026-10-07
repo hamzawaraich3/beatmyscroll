@@ -40,6 +40,11 @@ const newBestDisplay = document.getElementById("new-best");
 const grid = document.querySelector(".grid");
 const speedLinesContainer = document.getElementById("speed-lines");
 
+const challengeBox = document.getElementById("challenge-box");
+const challengeScoreDisplay = document.getElementById("challenge-score");
+const challengeTarget = document.getElementById("challenge-target");
+const challengeTargetScore = document.getElementById("challenge-target-score");
+
 
 /* =========================================================
    STATE
@@ -65,6 +70,16 @@ let finalElapsed = 0;
 
 let lastMilestone = -1;
 
+const urlParams = new URLSearchParams(window.location.search);
+const parsedChallengeScore = Number(urlParams.get("score"));
+
+const challengeScore =
+  Number.isFinite(parsedChallengeScore) && parsedChallengeScore > 0
+    ? Math.min(Math.floor(parsedChallengeScore), 1000000000000)
+    : 0;
+
+let challengeBeaten = false;
+
 
 /* =========================================================
    PERSONAL BEST
@@ -75,6 +90,12 @@ let personalBest =
 
 bestScoreDisplay.textContent =
   personalBest.toLocaleString();
+
+if (challengeScore > 0) {
+  challengeBox.classList.remove("hidden");
+  challengeScoreDisplay.textContent = challengeScore.toLocaleString();
+  challengeTargetScore.textContent = challengeScore.toLocaleString();
+}
 
 
 /* =========================================================
@@ -152,6 +173,11 @@ function startGame() {
   visualDistance = 0;
 
   lastMilestone = -1;
+  challengeBeaten = false;
+
+  if (challengeScore > 0) {
+    challengeTarget.classList.remove("hidden");
+  }
 
   startTime = performance.now();
   lastInputTime = performance.now();
@@ -402,6 +428,26 @@ function updateHUD() {
 
   multiplierDisplay.textContent =
     `${multiplier.toFixed(2)}×`;
+
+  if (
+    challengeScore > 0 &&
+    !challengeBeaten &&
+    roundedScore >= challengeScore
+  ) {
+    challengeBeaten = true;
+    challengeTarget.classList.add("hidden");
+
+    gameMessage.textContent = "TARGET DESTROYED";
+    gameMessage.style.color = "#b7ff32";
+    gameMessage.style.opacity = "1";
+    gameMessage.style.transform =
+      "translate(-50%, -50%) scale(1.08)";
+
+    setTimeout(function() {
+      gameMessage.style.transform =
+        "translate(-50%, -50%) scale(1)";
+    }, 180);
+  }
 }
 
 
@@ -705,9 +751,21 @@ function endGame(now) {
     "active"
   );
 
+  challengeTarget.classList.add("hidden");
+
   gameOverScreen.classList.add(
     "active"
   );
+
+  if (challengeScore > 0) {
+    if (roundedScore >= challengeScore) {
+      shareStatus.textContent =
+        `Challenge beaten by ${(roundedScore - challengeScore).toLocaleString()} points.`;
+    } else {
+      shareStatus.textContent =
+        `${(challengeScore - roundedScore).toLocaleString()} points short of the challenge.`;
+    }
+  }
 }
 
 
@@ -729,6 +787,7 @@ function resetGame() {
   visualDistance = 0;
 
   previousTouchY = null;
+  challengeBeaten = false;
 
   scoreDisplay.textContent = "0";
   timerDisplay.textContent = "0.0s";
@@ -743,6 +802,10 @@ function resetGame() {
 
   gameMessage.textContent =
     "KEEP SCROLLING";
+
+  gameMessage.style.color = "";
+
+  challengeTarget.classList.add("hidden");
 
   shareStatus.textContent =
     "";
@@ -787,10 +850,6 @@ retryButton.addEventListener(
   }
 );
 
-
-/* =========================================================
-   SHARE
-========================================================= */
 
 /* =========================================================
    SHARE
