@@ -4,18 +4,18 @@ A one-page scroll endurance game with opt-in worldwide rankings.
 
 ## Better sound quality (optional high-quality upgrade)
 
-The game now supports three audio tiers, selected automatically:
+The game selects the best audio source available:
 
-1. Full-quality `audio/*.mp3` on the website (best; user-uploaded original recordings).
-2. `bms-pack.bin` — the longer 48–64 kbps backup soundtrack (already in the repo).
-3. Tiny embedded clips in `media/*.js` (last-resort fallback).
+1. Full-quality `audio/*.mp3` files on the website (user-provided original recordings).
+2. The original embedded clips in `media/*.js` until the HQ audio is uploaded.
 
 The music manager avoids unnecessary restarts and fades between stages rather
 than abruptly cutting and replaying tracks at every speed fluctuation.
 
 To activate **full-quality** audio, extract the supplied
-`BeatMyScroll-HQ-Audio.zip` archive and upload the entire `audio/` directory
-to the repository root. Required filenames (case-sensitive):
+`BeatMyScroll-HQ-Audio.zip` archive, navigate to the existing `audio`
+folder in GitHub, and use **Add file → Upload files** to upload all six MP3s.
+Required filenames (case-sensitive):
 
 ```text
 audio/sonic.mp3
