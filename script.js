@@ -216,252 +216,405 @@ let challengeMessageLockUntil = 0;
    MEDIA + SOUND
 ========================================================= */
 
-const MEDIA =
-  window.BMS_MEDIA || {};
+
+const MEDIA = window.BMS_MEDIA || {};
+
+// When full-quality MP3s exist, use them. Otherwise recover the
+// longer, better-quality clips from our earlier packed soundtrack.
+// The ancient tiny embedded snippets remain the last-resort fallback.
+const HQ_AUDIO = {
+  click: "audio/click.mp3",
+  sonic: "audio/sonic.mp3",
+  goku: "audio/goku.mp3",
+  alquimia: "audio/alquimia.mp3",
+  aura: "audio/aura.mp3",
+  fahh: "audio/fahh.mp3"
+};
+
+const PACK_AUDIO = {
+  click: [0, 4640],
+  sonic: [4640, 60412],
+  goku: [65052, 41420],
+  alquimia: [106472, 72380],
+  aura: [178852, 72480],
+  fahh: [251332, 20523]
+};
+
+const AUDIO_VOLUME = {
+  click: 0.40,
+  sonic: 0.48,
+  goku: 0.66,
+  alquimia: 0.49,
+  aura: 0.51,
+  fahh: 0.70
+};
 
 let audioBank = null;
-let currentMusicKey = null;
+let audioBankPromise = null;
 let audioUnlocked = false;
+
+let currentMusicKey = null;
+let desiredMusicKey = null;
+let musicRequestId = 0;
+let sonicDropStartedAt = 0;
+
+const musicFades = new Map();
+const playingEffects = new Set();
 
 let soundEnabled =
   localStorage.getItem("beatMyScrollSound") !== "off";
 
-async function ensureAudioBank() {
-  if (audioBank) return audioBank;
+async function findAudioSources() {
+  // HEAD checks do not download whole songs. Cloudflare must serve
+  // actual audio MIME types, not an index.html 404 fallback.
+  try {
+    const head = await fetch(HQ_AUDIO.sonic, {
+      method: "HEAD",
+      cache: "no-cache"
+    });
 
-  const requiredMedia = [
-    "click",
-    "sonic",
-    "goku",
-    "alquimia",
-    "aura",
-    "fahh"
-  ];
+    const type =
+      (head.headers.get("content-type") || "").toLowerCase();
 
-  const missing =
-    requiredMedia.filter(
-      function(key) {
-        return !MEDIA[key];
-      }
-    );
-
-  if (missing.length) {
-    throw new Error(
-      "Missing media: " +
-      missing.join(", ")
-    );
+    if (
+      head.ok &&
+      (type.includes("audio/") || type.includes("mpeg"))
+    ) {
+      return HQ_AUDIO;
+    }
+  } catch (error) {
+    // The site's optional HQ audio folder has not been added yet.
   }
 
-  audioBank = {
-    click: new Audio(MEDIA.click),
-    sonic: new Audio(MEDIA.sonic),
-    goku: new Audio(MEDIA.goku),
-    alquimia: new Audio(MEDIA.alquimia),
-    aura: new Audio(MEDIA.aura),
-    fahh: new Audio(MEDIA.fahh)
-  };
+  try {
+    const response = await fetch("bms-pack.bin", {
+      cache: "force-cache"
+    });
 
-  audioBank.click.volume = 0.48;
-  audioBank.sonic.volume = 0.50;
-  audioBank.goku.volume = 0.72;
-  audioBank.alquimia.volume = 0.56;
-  audioBank.aura.volume = 0.62;
-  audioBank.fahh.volume = 0.88;
+    if (response.ok) {
+      const packedBytes = await response.arrayBuffer();
 
-  audioBank.sonic.loop = true;
-  audioBank.alquimia.loop = true;
-  audioBank.aura.loop = true;
+      if (packedBytes.byteLength >= 525638) {
+        const sources = {};
 
-  Object.values(audioBank).forEach(function(track) {
-    track.preload = "auto";
-  });
+        for (const [key, coordinates] of Object.entries(PACK_AUDIO)) {
+          const start = coordinates[0];
+          const length = coordinates[1];
 
-  return audioBank;
+          sources[key] = URL.createObjectURL(
+            new Blob(
+              [packedBytes.slice(start, start + length)],
+              { type: "audio/mpeg" }
+            )
+          );
+        }
+
+        return sources;
+      }
+    }
+  } catch (error) {
+    console.warn("Packed audio unavailable, using older snippets.");
+  }
+
+  return MEDIA;
+}
+
+function ensureAudioBank() {
+  if (audioBank) return Promise.resolve(audioBank);
+  if (audioBankPromise) return audioBankPromise;
+
+  audioBankPromise = findAudioSources()
+    .then(function(sources) {
+      const required = [
+        "click", "sonic", "goku",
+        "alquimia", "aura", "fahh"
+      ];
+
+      const missing = required.filter(key => !sources[key]);
+      if (missing.length) {
+        throw new Error("Missing audio sources: " + missing.join(", "));
+      }
+
+      const bank = {};
+
+      for (const key of required) {
+        const element = new Audio();
+        element.src = sources[key];
+
+        // Larger songs stream instead of blocking initial page load.
+        element.preload =
+          ["sonic", "alquimia", "aura"].includes(key)
+            ? "metadata"
+            : "auto";
+
+        element.volume = AUDIO_VOLUME[key];
+        element.loop =
+          ["sonic", "alquimia", "aura"].includes(key);
+
+        bank[key] = element;
+      }
+
+      audioBank = bank;
+      return bank;
+    })
+    .catch(function(error) {
+      console.warn("Audio initialization failed:", error);
+      audioBankPromise = null;
+      return null;
+    });
+
+  return audioBankPromise;
 }
 
 function updateSoundButton() {
-  soundToggle.textContent =
-    soundEnabled
-      ? (audioUnlocked ? "SOUND: ON" : "TAP FOR SOUND")
-      : "SOUND: OFF";
+  soundToggle.textContent = soundEnabled
+    ? (audioUnlocked ? "SOUND: ON" : "TAP FOR SOUND")
+    : "SOUND: OFF";
 
-  soundToggle.classList.toggle(
-    "muted",
-    !soundEnabled
-  );
+  soundToggle.classList.toggle("muted", !soundEnabled);
 }
 
-async function unlockAudio() {
+function unlockAudio() {
   if (!soundEnabled || audioUnlocked) return;
 
-  try {
-    await ensureAudioBank();
-  } catch (error) {
+  if (!audioBank) {
+    void ensureAudioBank();
     return;
   }
 
+  // Must start play() synchronously within a real gesture, especially
+  // on iOS Safari. An await before play can lose the gesture allowance.
   const click = audioBank.click;
-  const oldVolume = click.volume;
+  const normalVolume = click.volume;
+  click.volume = 0;
 
-  click.volume = 0.001;
-  click.currentTime = 0;
+  try {
+    const p = click.play();
 
-  const attempt = click.play();
-
-  if (attempt && typeof attempt.then === "function") {
-    attempt
-      .then(function() {
+    if (p && typeof p.then === "function") {
+      p.then(function() {
         click.pause();
-        click.currentTime = 0;
-        click.volume = oldVolume;
+        try { click.currentTime = 0; } catch (error) {}
+        click.volume = normalVolume;
         audioUnlocked = true;
         updateSoundButton();
-      })
-      .catch(function() {
-        click.volume = oldVolume;
+
+        if (state === "playing") {
+          syncStageMedia();
+        }
+      }).catch(function() {
+        click.volume = normalVolume;
         updateSoundButton();
       });
+    }
+  } catch (error) {
+    click.volume = normalVolume;
   }
 }
 
-function stopAudioTrack(track, reset) {
+function cancelFade(track) {
+  const id = musicFades.get(track);
+  if (id !== undefined) {
+    cancelAnimationFrame(id);
+    musicFades.delete(track);
+  }
+}
+
+function fadeTrack(track, destination, duration, pauseWhenDone) {
   if (!track) return;
 
-  track.pause();
+  cancelFade(track);
 
-  if (reset !== false) {
-    try {
-      track.currentTime = 0;
-    } catch (error) {
-      // Ignore media seek failures before metadata loads.
+  const initial = track.volume;
+  const started = performance.now();
+
+  function tick(now) {
+    const progress = Math.min(1, (now - started) / duration);
+    const eased = progress * progress * (3 - 2 * progress);
+    track.volume = Math.max(0, Math.min(1,
+      initial + (destination - initial) * eased
+    ));
+
+    if (progress >= 1) {
+      musicFades.delete(track);
+      if (pauseWhenDone) track.pause();
+      return;
     }
+
+    musicFades.set(track, requestAnimationFrame(tick));
   }
+
+  musicFades.set(track, requestAnimationFrame(tick));
 }
 
 function stopMusic() {
+  desiredMusicKey = null;
+  musicRequestId += 1;
+  currentMusicKey = null;
+
   if (!audioBank) return;
 
-  ["sonic", "alquimia", "aura"].forEach(
-    function(key) {
-      stopAudioTrack(audioBank[key], true);
+  ["sonic", "alquimia", "aura"].forEach(function(key) {
+    const track = audioBank[key];
+    if (!track.paused) {
+      fadeTrack(track, 0, 360, true);
     }
-  );
-
-  currentMusicKey = null;
+  });
 }
 
-async function playMusic(key) {
+function playMusic(key) {
   if (!soundEnabled) return;
+  if (desiredMusicKey === key) return;
 
-  try {
-    await ensureAudioBank();
-  } catch (error) {
-    return;
-  }
+  desiredMusicKey = key;
+  const requestId = ++musicRequestId;
 
-  if (
-    currentMusicKey === key &&
-    !audioBank[key].paused
-  ) {
-    return;
-  }
+  void ensureAudioBank().then(function(bank) {
+    if (
+      !bank ||
+      !soundEnabled ||
+      requestId !== musicRequestId ||
+      desiredMusicKey !== key ||
+      state !== "playing"
+    ) {
+      return;
+    }
 
-  stopMusic();
+    const incoming = bank[key];
+    if (!incoming) return;
 
-  currentMusicKey = key;
+    if (
+      currentMusicKey === key &&
+      !incoming.paused
+    ) {
+      return;
+    }
 
-  const track = audioBank[key];
-  track.currentTime = 0;
+    const outgoing = currentMusicKey
+      ? bank[currentMusicKey]
+      : null;
 
-  const attempt = track.play();
+    currentMusicKey = key;
 
-  if (attempt && typeof attempt.catch === "function") {
-    attempt.catch(function() {
-      currentMusicKey = null;
-      updateSoundButton();
-    });
-  }
+    cancelFade(incoming);
+    incoming.volume = 0;
+
+    // Never restart the same playing track on a small change in speed.
+    // Fresh stages begin at 0 once, then run continuously.
+    if (incoming.paused) {
+      try { incoming.currentTime = 0; } catch (error) {}
+    }
+
+    try {
+      const playing = incoming.play();
+      if (playing && typeof playing.catch === "function") {
+        playing.catch(function() {
+          if (requestId === musicRequestId) {
+            currentMusicKey = null;
+            desiredMusicKey = null;
+            updateSoundButton();
+          }
+        });
+      }
+      fadeTrack(incoming, AUDIO_VOLUME[key], 520, false);
+    } catch (error) {
+      console.warn("Could not start music:", error);
+    }
+
+    if (outgoing && outgoing !== incoming) {
+      fadeTrack(outgoing, 0, 420, true);
+    }
+  });
 }
 
-async function playSfx(key, playbackRate) {
+function playSfx(key, playbackRate) {
   if (!soundEnabled) return;
 
-  try {
-    await ensureAudioBank();
-  } catch (error) {
-    return;
+  // Prevent simultaneous overlapping copies of the same scream / click.
+  for (const effect of playingEffects) {
+    if (effect.dataset && effect.dataset.effect === key) {
+      effect.pause();
+      playingEffects.delete(effect);
+    }
   }
 
-  const original = audioBank[key];
+  void ensureAudioBank().then(function(bank) {
+    if (!bank || !soundEnabled) return;
+    const original = bank[key];
+    if (!original) return;
 
-  if (!original) return;
+    const sound = new Audio(original.src);
+    sound.preload = "auto";
+    sound.volume = AUDIO_VOLUME[key] || 0.5;
+    sound.playbackRate = playbackRate || 1;
+    sound.dataset = sound.dataset || {};
+    sound.dataset.effect = key;
 
-  const sound = original.cloneNode();
-  sound.volume = original.volume;
-  sound.playbackRate = playbackRate || 1;
+    playingEffects.add(sound);
 
-  const attempt = sound.play();
+    const cleanup = function() {
+      playingEffects.delete(sound);
+    };
 
-  if (attempt && typeof attempt.catch === "function") {
-    attempt.catch(function() {
-      updateSoundButton();
-    });
-  }
+    sound.addEventListener("ended", cleanup, { once: true });
+    sound.addEventListener("error", cleanup, { once: true });
+
+    try {
+      const playing = sound.play();
+      if (playing && typeof playing.catch === "function") {
+        playing.catch(cleanup);
+      }
+    } catch (error) {
+      cleanup();
+    }
+  });
 }
 
 function stopAllAudio() {
-  if (!audioBank) return;
-
-  Object.values(audioBank).forEach(
-    function(track) {
-      stopAudioTrack(track, true);
-    }
-  );
-
+  desiredMusicKey = null;
   currentMusicKey = null;
+  musicRequestId += 1;
+
+  for (const track of musicFades.keys()) {
+    cancelFade(track);
+  }
+
+  if (audioBank) {
+    for (const track of Object.values(audioBank)) {
+      track.pause();
+      try { track.currentTime = 0; } catch (error) {}
+    }
+  }
+
+  for (const effect of playingEffects) {
+    effect.pause();
+  }
+  playingEffects.clear();
 }
 
-soundToggle.addEventListener(
-  "click",
-  function() {
-    soundEnabled = !soundEnabled;
+soundToggle.addEventListener("click", function() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(
+    "beatMyScrollSound",
+    soundEnabled ? "on" : "off"
+  );
 
-    localStorage.setItem(
-      "beatMyScrollSound",
-      soundEnabled ? "on" : "off"
-    );
-
-    if (soundEnabled) {
-      audioUnlocked = false;
-      unlockAudio();
-
-      setTimeout(function() {
-        playSfx("click");
-      }, 30);
-
-      if (state === "playing") {
-        syncStageMedia();
-      }
-    } else {
-      stopAllAudio();
-    }
-
-    updateSoundButton();
+  if (soundEnabled) {
+    unlockAudio();
+    playSfx("click");
+    if (state === "playing") syncStageMedia();
+  } else {
+    stopAllAudio();
   }
-);
+  updateSoundButton();
+});
 
-["pointerdown", "touchstart", "keydown"].forEach(
-  function(eventName) {
-    window.addEventListener(
-      eventName,
-      unlockAudio,
-      {
-        passive: true,
-        once: false
-      }
-    );
-  }
-);
+["pointerdown", "touchstart", "keydown"].forEach(function(name) {
+  window.addEventListener(name, unlockAudio, { passive: true });
+});
+
+// Load / inspect sources early, without auto-playing anything.
+void ensureAudioBank();
 
 momentImage.addEventListener(
   "error",
@@ -744,7 +897,18 @@ function syncStageMedia() {
 }
 
 function setPowerStage(nextStage, now) {
-  if (powerStage === nextStage) return;
+  if (powerStage === nextStage) {
+    if (nextStage === "sonic") sonicDropStartedAt = 0;
+    return;
+  }
+
+  // A tiny dip around the speed threshold should not restart a song.
+  if (powerStage === "sonic" && nextStage === "normal") {
+    if (!sonicDropStartedAt) sonicDropStartedAt = now;
+    if (now - sonicDropStartedAt < 1100) return;
+  } else {
+    sonicDropStartedAt = 0;
+  }
 
   powerStage = nextStage;
 
