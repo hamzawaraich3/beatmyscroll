@@ -957,6 +957,7 @@ body.playing #combo-hud {
 
 .boost-target {
   --boost-fill: 0deg;
+  --rush-color: var(--cyan);
 
   position: absolute;
   left: 50%;
@@ -977,11 +978,11 @@ body.playing #combo-hud {
 .boost-approach {
   position: absolute;
   inset: -22px;
-  border: 2px solid rgba(33, 230, 255, 0.95);
+  border: 2px solid var(--rush-color);
   border-radius: 50%;
   box-shadow:
-    0 0 18px rgba(33, 230, 255, 0.5),
-    inset 0 0 18px rgba(33, 230, 255, 0.12);
+    0 0 18px color-mix(in srgb, var(--rush-color) 55%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--rush-color) 16%, transparent);
   transform: scale(1.8);
   opacity: 0.9;
   will-change: transform, opacity;
@@ -993,8 +994,8 @@ body.playing #combo-hud {
   border-radius: 50%;
   background:
     conic-gradient(
-      var(--cyan) 0deg,
-      var(--cyan) var(--boost-fill),
+      var(--rush-color) 0deg,
+      var(--rush-color) var(--boost-fill),
       rgba(255, 255, 255, 0.08) var(--boost-fill),
       rgba(255, 255, 255, 0.08) 360deg
     );
@@ -1029,11 +1030,23 @@ body.playing #combo-hud {
   letter-spacing: 2px;
 }
 
-.boost-copy strong {
-  color: var(--cyan);
-  font-size: 24px;
+.boost-copy em {
+  color: var(--rush-color);
+  font-size: 27px;
+  font-style: normal;
   font-weight: 950;
-  text-shadow: 0 0 12px rgba(33, 230, 255, 0.5);
+  line-height: 1;
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--rush-color) 62%, transparent),
+    0 0 20px color-mix(in srgb, var(--rush-color) 32%, transparent);
+}
+
+.boost-copy strong {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  opacity: 0.82;
 }
 
 .boost-toast {
