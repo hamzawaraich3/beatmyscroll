@@ -230,13 +230,15 @@ const HQ_AUDIO = {
   fahh: "audio/fahh.mp3"
 };
 
+// Auditory balance based on measured levels in the user-provided
+// recordings. Alquimia is much louder than Sonic at the source.
 const AUDIO_VOLUME = {
-  click: 0.40,
-  sonic: 0.48,
-  goku: 0.66,
-  alquimia: 0.49,
-  aura: 0.51,
-  fahh: 0.70
+  click: 0.42,
+  sonic: 0.68,
+  goku: 0.40,
+  alquimia: 0.16,
+  aura: 0.36,
+  fahh: 0.80
 };
 
 let audioBank = null;
