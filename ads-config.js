@@ -19,7 +19,7 @@
  * Empty values = unobtrusive ad-space placeholders, no ad requests.
  */
 window.BEAT_MY_SCROLL_ADS = {
-  publisherId: "",
+  publisherId: "ca-pub-1419660429007795",
   leftSlotId: "",
   rightSlotId: ""
 };
