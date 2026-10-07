@@ -43,6 +43,7 @@
   <title>Beat My Scroll</title>
 
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="ads.css" />
 </head>
 
 <body>
@@ -85,6 +86,22 @@
     <img id="moment-image" alt="" />
     <div id="moment-label"></div>
   </div>
+
+  <!-- Two reserved advertising rails: never present while a run is active. -->
+  <aside id="ad-rails" class="ad-rails" aria-label="Advertisements">
+    <div id="ad-left" class="ad-rail ad-rail-left" aria-label="Advertisement">
+      <span class="ad-label">ADVERTISEMENT</span>
+      <div id="ad-left-slot" class="ad-slot">
+        <div class="ad-empty-state" aria-hidden="true">AD SPACE</div>
+      </div>
+    </div>
+    <div id="ad-right" class="ad-rail ad-rail-right" aria-label="Advertisement">
+      <span class="ad-label">ADVERTISEMENT</span>
+      <div id="ad-right-slot" class="ad-slot">
+        <div class="ad-empty-state" aria-hidden="true">AD SPACE</div>
+      </div>
+    </div>
+  </aside>
 
   <button id="sound-toggle" class="sound-toggle" type="button">
     SOUND: ON
@@ -325,6 +342,8 @@
   <script src="media/fahh.js"></script>
   <script src="script.js"></script>
   <script src="leaderboard.js"></script>
+  <script src="ads-config.js"></script>
+  <script src="ads.js"></script>
 
 </body>
 </html>
