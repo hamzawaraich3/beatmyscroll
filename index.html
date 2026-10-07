@@ -52,6 +52,8 @@
     <div class="grid"></div>
   </div>
 
+  <div id="hyperspace" aria-hidden="true"></div>
+
 
   <!-- TOP HUD -->
   <div id="hud">
@@ -71,6 +73,10 @@
       <strong id="multiplier">1.00×</strong>
     </div>
 
+  </div>
+
+  <div id="combo-hud">
+    COMBO <strong id="combo-display">×1</strong>
   </div>
 
 
@@ -98,6 +104,10 @@
       Keep scrolling.
       <br>
       Stop for 1.5 seconds and you're done.
+    </p>
+
+    <p class="rush-hint">
+      HIT NEON RUSH CIRCLES TO BUILD COMBOS
     </p>
 
     <div id="challenge-box" class="challenge-box hidden">
@@ -142,6 +152,18 @@
       TARGET <span id="challenge-target-score">0</span>
     </div>
 
+    <div id="boost-target" class="boost-target hidden" aria-hidden="true">
+      <div id="boost-approach" class="boost-approach"></div>
+      <div id="boost-core" class="boost-core">
+        <div class="boost-copy">
+          <span>RUSH ↓</span>
+          <strong id="boost-progress">0%</strong>
+        </div>
+      </div>
+    </div>
+
+    <div id="boost-toast" class="boost-toast" aria-live="polite"></div>
+
     <div id="danger-bar">
       <div id="danger-fill"></div>
     </div>
@@ -183,6 +205,11 @@
       <div class="result">
         <span>MAX SPEED</span>
         <strong id="final-speed">1.00×</strong>
+      </div>
+
+      <div class="result">
+        <span>MAX COMBO</span>
+        <strong id="final-combo">×1</strong>
       </div>
 
       <div class="result">
