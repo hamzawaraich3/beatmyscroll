@@ -216,19 +216,136 @@ let challengeMessageLockUntil = 0;
    MEDIA + SOUND
 ========================================================= */
 
-const MEDIA = {
-  sonicImage: "assets/sonic-running.gif",
-  gokuImage: "assets/goku-super-saiyan.gif",
-  knightImage: "assets/female-knight.webp",
-  auraImage: "assets/aura-green-guy.webp",
+const MEDIA_FILES = {
+  sonicImage: "sonic-running.gif",
+  gokuImage: "goku-super-saiyan.gif",
+  knightImage: "female-knight.webp",
+  auraImage: "aura-green-guy.webp",
 
-  click: "assets/ui-click.mp3",
-  sonic: "assets/sonic-fast.mp3",
-  goku: "assets/goku-powerup.mp3",
-  alquimia: "assets/alquimia.mp3",
-  aura: "assets/aura-monster.mp3",
-  fahh: "assets/game-over-fahh.mp3"
+  click: "ui-click.mp3",
+  sonic: "sonic-fast.mp3",
+  goku: "goku-powerup.mp3",
+  alquimia: "alquimia.mp3",
+  aura: "aura-monster.mp3",
+  fahh: "game-over-fahh.mp3"
 };
+
+const PACK_MANIFEST = {
+  "ui-click.mp3": {
+    offset: 0,
+    length: 4640,
+    type: "audio/mpeg"
+  },
+  "sonic-fast.mp3": {
+    offset: 4640,
+    length: 60412,
+    type: "audio/mpeg"
+  },
+  "goku-powerup.mp3": {
+    offset: 65052,
+    length: 41420,
+    type: "audio/mpeg"
+  },
+  "alquimia.mp3": {
+    offset: 106472,
+    length: 72380,
+    type: "audio/mpeg"
+  },
+  "aura-monster.mp3": {
+    offset: 178852,
+    length: 72480,
+    type: "audio/mpeg"
+  },
+  "game-over-fahh.mp3": {
+    offset: 251332,
+    length: 20523,
+    type: "audio/mpeg"
+  },
+  "sonic-running.gif": {
+    offset: 271855,
+    length: 34215,
+    type: "image/gif"
+  },
+  "goku-super-saiyan.gif": {
+    offset: 306070,
+    length: 150722,
+    type: "image/gif"
+  },
+  "female-knight.webp": {
+    offset: 456792,
+    length: 59188,
+    type: "image/webp"
+  },
+  "aura-green-guy.webp": {
+    offset: 515980,
+    length: 9658,
+    type: "image/webp"
+  }
+};
+
+const MEDIA = {};
+let mediaPackPromise = null;
+
+function loadMediaPack() {
+  if (mediaPackPromise) {
+    return mediaPackPromise;
+  }
+
+  mediaPackPromise =
+    fetch("bms-pack.bin")
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error(
+            "Media pack failed: " +
+            response.status
+          );
+        }
+
+        return response.arrayBuffer();
+      })
+      .then(function(buffer) {
+        Object.entries(MEDIA_FILES).forEach(
+          function(entry) {
+            const key = entry[0];
+            const filename = entry[1];
+            const meta = PACK_MANIFEST[filename];
+
+            const bytes =
+              buffer.slice(
+                meta.offset,
+                meta.offset + meta.length
+              );
+
+            MEDIA[key] =
+              URL.createObjectURL(
+                new Blob(
+                  [bytes],
+                  {
+                    type: meta.type
+                  }
+                )
+              );
+          }
+        );
+
+        return MEDIA;
+      })
+      .catch(function(error) {
+        console.log(
+          "BeatMyScroll media pack error:",
+          error
+        );
+
+        soundToggle.textContent =
+          "MEDIA ERROR";
+
+        throw error;
+      });
+
+  return mediaPackPromise;
+}
+
+loadMediaPack();
 
 let audioBank = null;
 let currentMusicKey = null;
@@ -237,8 +354,12 @@ let audioUnlocked = false;
 let soundEnabled =
   localStorage.getItem("beatMyScrollSound") !== "off";
 
-function ensureAudioBank() {
-  if (audioBank) return;
+async function ensureAudioBank() {
+  if (audioBank) return audioBank;
+
+  await loadMediaPack();
+
+  if (audioBank) return audioBank;
 
   audioBank = {
     click: new Audio(MEDIA.click),
@@ -263,6 +384,8 @@ function ensureAudioBank() {
   Object.values(audioBank).forEach(function(track) {
     track.preload = "auto";
   });
+
+  return audioBank;
 }
 
 function updateSoundButton() {
@@ -277,10 +400,14 @@ function updateSoundButton() {
   );
 }
 
-function unlockAudio() {
+async function unlockAudio() {
   if (!soundEnabled || audioUnlocked) return;
 
-  ensureAudioBank();
+  try {
+    await ensureAudioBank();
+  } catch (error) {
+    return;
+  }
 
   const click = audioBank.click;
   const oldVolume = click.volume;
@@ -332,10 +459,14 @@ function stopMusic() {
   currentMusicKey = null;
 }
 
-function playMusic(key) {
+async function playMusic(key) {
   if (!soundEnabled) return;
 
-  ensureAudioBank();
+  try {
+    await ensureAudioBank();
+  } catch (error) {
+    return;
+  }
 
   if (
     currentMusicKey === key &&
@@ -361,10 +492,14 @@ function playMusic(key) {
   }
 }
 
-function playSfx(key, playbackRate) {
+async function playSfx(key, playbackRate) {
   if (!soundEnabled) return;
 
-  ensureAudioBank();
+  try {
+    await ensureAudioBank();
+  } catch (error) {
+    return;
+  }
 
   const original = audioBank[key];
 
@@ -640,6 +775,17 @@ function crumbleToMessage(message) {
   );
 }
 
+function impactBurst(kind, count, gap) {
+  const total = count || 2;
+  const spacing = gap || 150;
+
+  for (let i = 0; i < total; i++) {
+    setTimeout(function() {
+      triggerImpact(kind);
+    }, i * spacing);
+  }
+}
+
 function triggerImpact(kind) {
   body.classList.remove(
     "impact-frame",
@@ -667,17 +813,33 @@ function triggerImpact(kind) {
   }, 520);
 }
 
-function showMoment(image, label, color) {
+function showMoment(imageKey, label, color) {
   momentCard.style.setProperty(
     "--moment-color",
     color
   );
 
-  momentImage.src = image;
   momentImage.alt = label;
   momentLabel.textContent = label;
 
   momentCard.classList.remove("hidden");
+
+  if (MEDIA[imageKey]) {
+    momentImage.src = MEDIA[imageKey];
+    return;
+  }
+
+  loadMediaPack()
+    .then(function(media) {
+      if (
+        momentLabel.textContent === label
+      ) {
+        momentImage.src = media[imageKey];
+      }
+    })
+    .catch(function() {
+      momentCard.classList.add("hidden");
+    });
 }
 
 function hideMoment() {
@@ -725,7 +887,7 @@ function setPowerStage(nextStage, now) {
 
   if (nextStage === "sonic") {
     showMoment(
-      MEDIA.sonicImage,
+      "sonicImage",
       "GOTTA GO FAST",
       "#21e6ff"
     );
@@ -737,7 +899,7 @@ function setPowerStage(nextStage, now) {
     stopMusic();
 
     showMoment(
-      MEDIA.gokuImage,
+      "gokuImage",
       "POWERING UP",
       "#ffe75d"
     );
@@ -747,33 +909,33 @@ function setPowerStage(nextStage, now) {
     gokuUntil =
       now + GOKU_DURATION;
 
-    triggerImpact("gold");
+    impactBurst("gold", 3, 145);
     slamGameMessage("POWER UP", "#ffe75d");
   }
 
   if (nextStage === "alquimia") {
     showMoment(
-      MEDIA.knightImage,
+      "knightImage",
       "LOCKED IN",
       "#ff2bd6"
     );
 
     playMusic("alquimia");
 
-    triggerImpact("pink");
+    impactBurst("pink", 2, 170);
     slamGameMessage("LOCKED IN", "#ff2bd6");
   }
 
   if (nextStage === "aura") {
     showMoment(
-      MEDIA.auraImage,
+      "auraImage",
       "AURA MODE",
       "#b7ff32"
     );
 
     playMusic("aura");
 
-    triggerImpact("green");
+    impactBurst("green", 3, 125);
     slamGameMessage("AURA MONSTER", "#b7ff32");
   }
 }
