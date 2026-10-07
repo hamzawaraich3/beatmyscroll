@@ -1080,7 +1080,7 @@ function spawnBoost(now) {
   boostProgressDisplay.textContent = "0%";
 
   boostApproach.style.transform = "scale(1.8)";
-  boostApproach.style.opacity = "0.9";
+  boostApproach.style.opacity = "0.55";
 
   boostTarget.classList.remove("hidden");
 }
@@ -1160,7 +1160,7 @@ function updateBoost(now) {
     "scale(" + approachScale.toFixed(3) + ")";
 
   boostApproach.style.opacity =
-    String(0.95 - timeRatio * 0.35);
+    String(0.58 - timeRatio * 0.22);
 
   boostCore.style.setProperty(
     "--boost-fill",
