@@ -219,9 +219,8 @@ let challengeMessageLockUntil = 0;
 
 const MEDIA = window.BMS_MEDIA || {};
 
-// When full-quality MP3s exist, use them. Otherwise recover the
-// longer, better-quality clips from our earlier packed soundtrack.
-// The ancient tiny embedded snippets remain the last-resort fallback.
+// When full-quality MP3s exist, use them. Until they are uploaded,
+// keep the original embedded clips as a compatibility fallback.
 const HQ_AUDIO = {
   click: "audio/click.mp3",
   sonic: "audio/sonic.mp3",
@@ -229,15 +228,6 @@ const HQ_AUDIO = {
   alquimia: "audio/alquimia.mp3",
   aura: "audio/aura.mp3",
   fahh: "audio/fahh.mp3"
-};
-
-const PACK_AUDIO = {
-  click: [0, 4640],
-  sonic: [4640, 60412],
-  goku: [65052, 41420],
-  alquimia: [106472, 72380],
-  aura: [178852, 72480],
-  fahh: [251332, 20523]
 };
 
 const AUDIO_VOLUME = {
@@ -284,36 +274,6 @@ async function findAudioSources() {
     }
   } catch (error) {
     // The site's optional HQ audio folder has not been added yet.
-  }
-
-  try {
-    const response = await fetch("bms-pack.bin", {
-      cache: "force-cache"
-    });
-
-    if (response.ok) {
-      const packedBytes = await response.arrayBuffer();
-
-      if (packedBytes.byteLength >= 525638) {
-        const sources = {};
-
-        for (const [key, coordinates] of Object.entries(PACK_AUDIO)) {
-          const start = coordinates[0];
-          const length = coordinates[1];
-
-          sources[key] = URL.createObjectURL(
-            new Blob(
-              [packedBytes.slice(start, start + length)],
-              { type: "audio/mpeg" }
-            )
-          );
-        }
-
-        return sources;
-      }
-    }
-  } catch (error) {
-    console.warn("Packed audio unavailable, using older snippets.");
   }
 
   return MEDIA;
@@ -530,6 +490,8 @@ function playMusic(key) {
 function playSfx(key, playbackRate) {
   if (!soundEnabled) return;
 
+  const requestId = musicRequestId;
+
   // Prevent simultaneous overlapping copies of the same scream / click.
   for (const effect of playingEffects) {
     if (effect.dataset && effect.dataset.effect === key) {
@@ -540,6 +502,14 @@ function playSfx(key, playbackRate) {
 
   void ensureAudioBank().then(function(bank) {
     if (!bank || !soundEnabled) return;
+    if (
+      requestId !== musicRequestId &&
+      key !== "fahh" &&
+      key !== "click"
+    ) {
+      return;
+    }
+
     const original = bank[key];
     if (!original) return;
 
@@ -547,7 +517,6 @@ function playSfx(key, playbackRate) {
     sound.preload = "auto";
     sound.volume = AUDIO_VOLUME[key] || 0.5;
     sound.playbackRate = playbackRate || 1;
-    sound.dataset = sound.dataset || {};
     sound.dataset.effect = key;
 
     playingEffects.add(sound);
