@@ -1185,6 +1185,10 @@ function startGame() {
 
   const now = performance.now();
 
+  if (window.BMSLeaderboard) {
+    window.BMSLeaderboard.onGameStart();
+  }
+
   state = "playing";
 
   score = 0;
@@ -1370,6 +1374,7 @@ function handleScrollInput(amount) {
 window.addEventListener(
   "wheel",
   function(event) {
+    if (state === "gameover") return;
     event.preventDefault();
     handleScrollInput(event.deltaY);
   },
@@ -1399,6 +1404,8 @@ window.addEventListener(
 window.addEventListener(
   "touchmove",
   function(event) {
+    // Allow the leaderboard to scroll normally on phones after a run.
+    if (state === "gameover") return;
     event.preventDefault();
 
     if (
@@ -1440,11 +1447,8 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   function(event) {
-    if (
-      state === "gameover" &&
-      event.key === "Enter"
-    ) {
-      resetGame();
+    if (state === "gameover") {
+      // Enter must work in the username form; do not reset the game.
       return;
     }
 
@@ -1830,6 +1834,15 @@ function endGame(now) {
         (challengeScore - roundedScore).toLocaleString() +
         " points short of the challenge.";
     }
+  }
+
+  if (window.BMSLeaderboard) {
+    window.BMSLeaderboard.onGameOver({
+      score: roundedScore,
+      avgSpeed: averageSpeed,
+      maxSpeed: maxSpeed,
+      duration: finalElapsed / 1000
+    });
   }
 }
 
