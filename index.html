@@ -258,6 +258,58 @@
 
     <p id="share-status"></p>
 
+    <!-- GLOBAL LEADERBOARD -->
+    <section id="leaderboard-area" class="leaderboard-area" aria-label="Global leaderboard">
+      <form id="leaderboard-register" class="leaderboard-register" hidden>
+        <div class="leaderboard-register-heading">CLAIM YOUR SPOT</div>
+        <label for="leaderboard-username">One username. Three ways to dominate.</label>
+        <div class="leaderboard-form-row">
+          <input
+            id="leaderboard-username"
+            name="username"
+            type="text"
+            maxlength="15"
+            minlength="1"
+            pattern="[A-Za-z0-9_-]{1,15}"
+            autocomplete="nickname"
+            placeholder="Username (max 15)"
+            spellcheck="false"
+            required
+          />
+          <button id="leaderboard-submit" type="submit">SUBMIT SCORE</button>
+          <button id="leaderboard-skip" class="leaderboard-skip" type="button">NOT NOW</button>
+        </div>
+        <p class="leaderboard-hint">
+          Letters, numbers, _ and - only. After you register, your best scores update automatically on this browser.
+        </p>
+      </form>
+
+      <p id="leaderboard-player" class="leaderboard-player" hidden></p>
+      <p id="leaderboard-feedback" class="leaderboard-feedback" role="status" aria-live="polite"></p>
+
+      <div class="leaderboard-card">
+        <div class="leaderboard-header">
+          <div>
+            <p class="leaderboard-kicker">WORLDWIDE RECORDS</p>
+            <h3>THE LEADERBOARD <span>⚡</span></h3>
+          </div>
+          <span class="leaderboard-top-count">TOP 15</span>
+        </div>
+
+        <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard categories">
+          <button class="leaderboard-tab is-active" type="button" role="tab" aria-selected="true" data-leaderboard="score">RAW SCORE</button>
+          <button class="leaderboard-tab" type="button" role="tab" aria-selected="false" data-leaderboard="average">AVG SPEED</button>
+          <button class="leaderboard-tab" type="button" role="tab" aria-selected="false" data-leaderboard="maximum">MAX SPEED</button>
+        </div>
+
+        <ol id="leaderboard-list" class="leaderboard-list" aria-live="polite">
+          <li class="leaderboard-placeholder">Loading worldwide scores…</li>
+        </ol>
+
+        <p class="leaderboard-footnote">Best result per player in each category · updated after every submitted run</p>
+      </div>
+    </section>
+
   </main>
 
 
@@ -272,6 +324,7 @@
   <script src="media/aura-image.js"></script>
   <script src="media/fahh.js"></script>
   <script src="script.js"></script>
+  <script src="leaderboard.js"></script>
 
 </body>
 </html>
