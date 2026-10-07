@@ -819,3 +819,61 @@ body.speed-4 #game-screen {
   }
 
 }
+
+
+/* =========================================================
+   CHALLENGE MODE
+========================================================= */
+
+.challenge-box {
+  margin-top: 28px;
+  padding: 18px 26px;
+  border: 1px solid rgba(183, 255, 50, 0.35);
+  border-radius: 16px;
+  background: rgba(183, 255, 50, 0.06);
+}
+
+.challenge-box.hidden,
+.challenge-target.hidden {
+  display: none;
+}
+
+.challenge-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+#challenge-score {
+  font-size: clamp(34px, 7vw, 72px);
+  font-weight: 950;
+  color: var(--green);
+  line-height: 1;
+}
+
+.challenge-subtext {
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #aaa;
+}
+
+.challenge-target {
+  position: absolute;
+  top: 70%;
+  padding: 10px 16px;
+  border: 1px solid rgba(183, 255, 50, 0.28);
+  border-radius: 999px;
+  background: rgba(5, 5, 5, 0.72);
+  color: #777;
+  font-size: 10px;
+  letter-spacing: 2px;
+  backdrop-filter: blur(8px);
+}
+
+.challenge-target span {
+  color: var(--green);
+  font-weight: 900;
+  margin-left: 6px;
+}
