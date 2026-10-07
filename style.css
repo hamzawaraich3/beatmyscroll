@@ -177,9 +177,18 @@ body.playing #hud {
   text-shadow: 0 0 18px rgba(183, 255, 50, 0.28);
 }
 
-#multiplier {
+#speed-display {
   color: var(--cyan);
   text-shadow: 0 0 18px rgba(33, 230, 255, 0.28);
+  white-space: nowrap;
+}
+
+#speed-display small {
+  color: #7e95a3;
+  font-size: 0.38em;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: none;
 }
 
 
