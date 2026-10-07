@@ -493,6 +493,10 @@ body.playing #hud {
 ========================================================= */
 
 #speed-lines {
+  --speed-blur: 0px;
+  --speed-brightness: 0.8;
+  --speed-glow: 3px;
+
   position: absolute;
 
   inset: 0;
@@ -501,7 +505,7 @@ body.playing #hud {
 
   opacity: 0;
 
-  transition: opacity 0.3s;
+  transition: opacity 0.16s;
 }
 
 
@@ -517,19 +521,30 @@ body.playing #hud {
 
   border-radius: 10px;
 
-  filter: drop-shadow(0 0 6px rgba(183,255,50,0.55));
+  transform-origin: center top;
 
-  will-change: transform;
+  filter:
+    blur(var(--speed-blur))
+    brightness(var(--speed-brightness))
+    drop-shadow(0 0 var(--speed-glow) rgba(183,255,50,0.62));
+
+  will-change: transform, filter;
 }
 
 .speed-line:nth-child(3n + 1) {
   background: linear-gradient(transparent, rgba(33,230,255,0.85));
-  filter: drop-shadow(0 0 6px rgba(33,230,255,0.55));
+  filter:
+    blur(var(--speed-blur))
+    brightness(var(--speed-brightness))
+    drop-shadow(0 0 var(--speed-glow) rgba(33,230,255,0.62));
 }
 
 .speed-line:nth-child(3n + 2) {
   background: linear-gradient(transparent, rgba(255,43,214,0.78));
-  filter: drop-shadow(0 0 6px rgba(255,43,214,0.45));
+  filter:
+    blur(var(--speed-blur))
+    brightness(var(--speed-brightness))
+    drop-shadow(0 0 var(--speed-glow) rgba(255,43,214,0.54));
 }
 
 
@@ -1183,4 +1198,18 @@ body.speed-4 #distance-marker {
   .result {
     min-width: 42%;
   }
+}
+
+
+/* Rush targets are meant to be difficult bursts, not free combo pickups. */
+.boost-target {
+  transition:
+    filter 0.15s,
+    opacity 0.15s;
+}
+
+body.speed-3 .boost-target {
+  filter:
+    drop-shadow(0 0 16px rgba(33, 230, 255, 0.72))
+    drop-shadow(0 0 34px rgba(255, 43, 214, 0.32));
 }
