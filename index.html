@@ -12,10 +12,6 @@
     name="description"
     content="How long can you keep scrolling? Beat your score on BeatMyScroll."
   />
-<meta
-    name="description"
-    content="How long can you keep scrolling? Beat your score on BeatMyScroll."
-/>
 
 <meta property="og:title" content="Beat My Scroll" />
 
@@ -44,7 +40,6 @@
     content="summary_large_image"
 />
 
-<title>Beat My Scroll</title>
   <title>Beat My Scroll</title>
 
   <link rel="stylesheet" href="style.css" />
@@ -105,6 +100,12 @@
       Stop for 1.5 seconds and you're done.
     </p>
 
+    <div id="challenge-box" class="challenge-box hidden">
+      <p class="challenge-label">YOU'VE BEEN CHALLENGED</p>
+      <div id="challenge-score">0</div>
+      <p class="challenge-subtext">BEAT THIS SCORE</p>
+    </div>
+
     <div class="start-scroll">
 
       <span>
@@ -135,6 +136,10 @@
 
     <div id="distance-marker">
       0
+    </div>
+
+    <div id="challenge-target" class="challenge-target hidden">
+      TARGET <span id="challenge-target-score">0</span>
     </div>
 
     <div id="danger-bar">
