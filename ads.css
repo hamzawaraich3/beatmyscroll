@@ -1,0 +1,127 @@
+/* BeatMyScroll side advertisements.
+   Never allow monetization to overlap an active run. */
+
+.ad-rails {
+  display: none;
+}
+
+/* Wide layouts only: keep a substantial gap between the game and adverts. */
+@media (min-width: 1360px) and (min-height: 690px) {
+  .ad-rails {
+    display: block;
+  }
+
+  .ad-rail {
+    position: fixed;
+    z-index: 115; /* game-over layer is 100; never cover the central content */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 120px;
+    height: min(600px, calc(100vh - 180px));
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    box-sizing: border-box;
+    pointer-events: auto;
+  }
+
+  .ad-rail-left {
+    left: 16px;
+  }
+
+  .ad-rail-right {
+    right: 16px;
+  }
+
+  .ad-label {
+    color: #79838b;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 1.8px;
+    line-height: 1.4;
+    text-align: center;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .ad-slot {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    border: 1px solid rgba(92, 122, 131, 0.24);
+    border-radius: 12px;
+    background: rgba(8, 14, 19, 0.60);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .ad-empty-state {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: rgba(136, 157, 167, 0.55);
+    font: 800 10px/1.5 Inter, Arial, sans-serif;
+    letter-spacing: 2.3px;
+    border: 1px dashed rgba(99, 145, 154, 0.19);
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  .ad-slot.is-live {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .ad-slot .adsbygoogle {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* No interruptions, clicks or flashes anywhere on the play screen. */
+  body.playing .ad-rails {
+    display: none !important;
+  }
+
+  /* Make it impossible for ad space to crowd or clip the central screens. */
+  #start-screen {
+    padding-left: 175px;
+    padding-right: 175px;
+  }
+
+  #game-over.active {
+    padding-left: 175px;
+    padding-right: 175px;
+  }
+
+  /* Sound toggle has its own space, away from advertising. */
+  .sound-toggle {
+    left: 186px;
+  }
+}
+
+@media (min-width: 1640px) and (min-height: 690px) {
+  .ad-rail {
+    width: 160px;
+  }
+
+  #start-screen,
+  #game-over.active {
+    padding-left: 220px;
+    padding-right: 220px;
+  }
+
+  .sound-toggle {
+    left: 226px;
+  }
+}
+
+@media (max-width: 1359px), (max-height: 689px) {
+  .ad-rails {
+    display: none !important;
+  }
+}
