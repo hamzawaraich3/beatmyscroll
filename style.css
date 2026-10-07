@@ -979,21 +979,25 @@ body.playing #combo-hud {
   display: grid;
   place-items: center;
 
+  opacity: 0.78;
+
   filter:
-    drop-shadow(0 0 12px rgba(33, 230, 255, 0.55))
-    drop-shadow(0 0 28px rgba(255, 43, 214, 0.2));
+    drop-shadow(0 0 6px rgba(33, 230, 255, 0.26))
+    drop-shadow(0 0 12px rgba(255, 43, 214, 0.10));
+
+  animation: rushTargetBreathe 1.05s ease-in-out infinite alternate;
 }
 
 .boost-approach {
   position: absolute;
   inset: -22px;
-  border: 2px solid var(--rush-color);
+  border: 1px solid color-mix(in srgb, var(--rush-color) 72%, transparent);
   border-radius: 50%;
   box-shadow:
-    0 0 18px color-mix(in srgb, var(--rush-color) 55%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--rush-color) 16%, transparent);
+    0 0 8px color-mix(in srgb, var(--rush-color) 28%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--rush-color) 8%, transparent);
   transform: scale(1.8);
-  opacity: 0.9;
+  opacity: 0.58;
   will-change: transform, opacity;
 }
 
@@ -1232,8 +1236,18 @@ body.speed-4 #distance-marker {
 
 body.speed-3 .boost-target {
   filter:
-    drop-shadow(0 0 16px rgba(33, 230, 255, 0.72))
-    drop-shadow(0 0 34px rgba(255, 43, 214, 0.32));
+    drop-shadow(0 0 8px rgba(33, 230, 255, 0.34))
+    drop-shadow(0 0 16px rgba(255, 43, 214, 0.14));
+}
+
+@keyframes rushTargetBreathe {
+  from {
+    opacity: 0.58;
+  }
+
+  to {
+    opacity: 0.82;
+  }
 }
 
 
