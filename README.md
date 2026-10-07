@@ -2,6 +2,37 @@
 
 A one-page scroll endurance game with opt-in worldwide rankings.
 
+## Side advertisements
+
+The start screen and game-over screen share two **side-only** ad placements
+(left and right). They never cover the center or active gameplay, and no
+new ad request is made when a run finishes or a player retries.
+
+Ads are intentionally hidden on narrow windows (<1360px) or short windows
+(<690px). During actual gameplay, both rails are hidden. This means mobile
+players see no ads and the game remains uncluttered.
+
+The layout and optional Google AdSense integration are ready, but **ads are
+NOT live until you activate your own approved Google AdSense account**:
+
+1. Apply for Google AdSense at https://www.google.com/adsense/start/ and
+   add `beatmyscroll.com` for approval.
+2. Choose **Ads → By ad unit → Display ads** and make two units:
+   `BeatMyScroll Left` and `BeatMyScroll Right`.
+3. Edit `ads-config.js` to paste your real `ca-pub-...` publisher ID
+   and the two numeric slot IDs.
+4. Commit to GitHub and deploy through Cloudflare; allow time for Google
+   to approve the site and start serving creative content.
+5. Leave **Auto ads**, anchor/overlay ads, interstitials, and vignette ads
+   switched off so ads do not unexpectedly appear during gameplay.
+6. Follow Google's `ads.txt` instructions for your own publisher ID once
+   an AdSense account is approved.
+
+No third-party script loads while the publisher/slot settings are empty.
+Until configured, clearly marked, understated `AD SPACE` placeholders are
+shown on desktop only. AdSense policies prohibit encouraging ad clicks or
+placing ads close to play controls.
+
 ## Leaderboard
 
 After the first run, a player can choose a username (1–15 characters; letters,
