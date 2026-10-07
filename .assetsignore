@@ -1,0 +1,15 @@
+# Do not publish Git metadata, Worker backend source, or deployment settings
+.git
+.git/**
+.wrangler
+.wrangler/**
+node_modules
+node_modules/**
+worker.js
+wrangler.toml
+wrangler.json
+wrangler.jsonc
+.assetsignore
+.gitignore
+README.md
+*.map
