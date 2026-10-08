@@ -14,7 +14,8 @@
  *   rightSlotId: "0987654321"
  *
  * Keep Auto ads / overlay formats turned OFF for this website:
- * the game manages only the two manual side placements.
+ * BeatMyScroll manages only two manual side placements on the
+ * content-rich landing page. Gameplay and game-over stay ad-free.
  *
  * Empty values = unobtrusive ad-space placeholders, no ad requests.
  */
