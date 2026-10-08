@@ -101,6 +101,8 @@ const body = document.body;
 const startScreen = document.getElementById("start-screen");
 const gameScreen = document.getElementById("game-screen");
 const gameOverScreen = document.getElementById("game-over");
+const startButton = document.getElementById("start-button");
+const startButtonBottom = document.getElementById("start-button-bottom");
 
 const scoreDisplay = document.getElementById("score");
 const timerDisplay = document.getElementById("timer");
@@ -1376,6 +1378,7 @@ function startGame() {
   gameOverScreen.classList.remove("active");
   gameScreen.classList.add("active");
 
+  body.classList.remove("landing");
   body.classList.add("playing");
 
   body.classList.remove(
@@ -1412,8 +1415,8 @@ function handleScrollInput(amount) {
   amount =
     Math.min(rawAmount, MAX_INPUT);
 
-  if (state === "waiting") {
-    startGame();
+  if (state !== "playing") {
+    return;
   }
 
   const now = performance.now();
@@ -1509,7 +1512,7 @@ function handleScrollInput(amount) {
 window.addEventListener(
   "wheel",
   function(event) {
-    if (state === "gameover") return;
+    if (state !== "playing") return;
     event.preventDefault();
     handleScrollInput(event.deltaY);
   },
@@ -1539,8 +1542,8 @@ window.addEventListener(
 window.addEventListener(
   "touchmove",
   function(event) {
-    // Allow the leaderboard to scroll normally on phones after a run.
-    if (state === "gameover") return;
+    // Landing content and results must scroll normally on phones.
+    if (state !== "playing") return;
     event.preventDefault();
 
     if (
@@ -1582,8 +1585,8 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   function(event) {
-    if (state === "gameover") {
-      // Enter must work in the username form; do not reset the game.
+    if (state !== "playing") {
+      // Preserve normal keyboard navigation on the landing/results screens.
       return;
     }
 
@@ -2073,11 +2076,28 @@ function resetGame() {
     "stage-alquimia",
     "stage-aura"
   );
+  body.classList.add("landing");
 
   gameOverScreen.classList.remove("active");
   gameScreen.classList.remove("active");
   startScreen.classList.add("active");
+  startScreen.scrollTop = 0;
 }
+
+
+/* =========================================================
+   LANDING PAGE START BUTTONS
+========================================================= */
+
+[startButton, startButtonBottom].forEach(function(button) {
+  if (!button) return;
+
+  button.addEventListener("click", function() {
+    unlockAudio();
+    playSfx("click");
+    startGame();
+  });
+});
 
 
 /* =========================================================
