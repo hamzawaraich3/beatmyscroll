@@ -7,8 +7,12 @@
 
 /* Wide layouts only: keep a substantial gap between the game and adverts. */
 @media (min-width: 1360px) and (min-height: 690px) {
-  .ad-rails {
+  body.landing .ad-rails {
     display: block;
+  }
+
+  body:not(.landing) .ad-rails {
+    display: none !important;
   }
 
   .ad-rail {
@@ -82,24 +86,14 @@
     height: 100%;
   }
 
-  /* No interruptions, clicks or flashes anywhere on the play screen. */
-  body.playing .ad-rails {
-    display: none !important;
-  }
-
-  /* Make it impossible for ad space to crowd or clip the central screens. */
-  #start-screen {
+  /* Ads exist on the publisher-content landing page only. */
+  body.landing #start-screen {
     padding-left: 175px;
     padding-right: 175px;
   }
 
-  #game-over.active {
-    padding-left: 175px;
-    padding-right: 175px;
-  }
-
-  /* Sound toggle has its own space, away from advertising. */
-  .sound-toggle {
+  /* Sound control stays clear of the left rail on the landing page. */
+  body.landing .sound-toggle {
     left: 186px;
   }
 }
@@ -109,13 +103,12 @@
     width: 160px;
   }
 
-  #start-screen,
-  #game-over.active {
+  body.landing #start-screen {
     padding-left: 220px;
     padding-right: 220px;
   }
 
-  .sound-toggle {
+  body.landing .sound-toggle {
     left: 226px;
   }
 }
