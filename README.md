@@ -36,34 +36,28 @@ replace them with music you are permitted to distribute.
 
 ## Side advertisements
 
-The start screen and game-over screen share two **side-only** ad placements
-(left and right). They never cover the center or active gameplay, and no
-new ad request is made when a run finishes or a player retries.
+Advertising is restricted to the **content-rich landing page only**, in two
+desktop side rails (left and right). Ads are hidden during gameplay, hidden on
+the game-over/results screen, hidden on the leaderboard screen, and hidden on
+mobile/narrow layouts.
 
-Ads are intentionally hidden on narrow windows (<1360px) or short windows
-(<690px). During actual gameplay, both rails are hidden. This means mobile
-players see no ads and the game remains uncluttered.
+The landing page now contains original publisher content explaining how the
+game works, scoring, scroll-speed statistics, RUSH combos, speed stages,
+leaderboards and FAQs. Gameplay starts from an explicit PLAY button so visitors
+can read and navigate the landing page normally.
 
-The layout and optional Google AdSense integration are ready, but **ads are
-NOT live until you activate your own approved Google AdSense account**:
+The optional Google AdSense integration is ready, but actual manual ad units
+remain inactive until approved slot IDs are added:
 
-1. Apply for Google AdSense at https://www.google.com/adsense/start/ and
-   add `beatmyscroll.com` for approval.
+1. Get `beatmyscroll.com` approved in Google AdSense.
 2. Choose **Ads → By ad unit → Display ads** and make two units:
    `BeatMyScroll Left` and `BeatMyScroll Right`.
-3. Edit `ads-config.js` to paste your real `ca-pub-...` publisher ID
-   and the two numeric slot IDs.
-4. Commit to GitHub and deploy through Cloudflare; allow time for Google
-   to approve the site and start serving creative content.
-5. Leave **Auto ads**, anchor/overlay ads, interstitials, and vignette ads
-   switched off so ads do not unexpectedly appear during gameplay.
-6. Follow Google's `ads.txt` instructions for your own publisher ID once
-   an AdSense account is approved.
+3. Edit `ads-config.js` and paste the two numeric slot IDs.
+4. Keep **Auto ads**, anchor/overlay ads, interstitials and vignette ads off.
+5. The AdSense verification script and `ads.txt` remain present at the root.
 
-No third-party script loads while the publisher/slot settings are empty.
-Until configured, clearly marked, understated `AD SPACE` placeholders are
-shown on desktop only. AdSense policies prohibit encouraging ad clicks or
-placing ads close to play controls.
+The page also includes `privacy.html`, `robots.txt` and `sitemap.xml`.
+Do not encourage ad clicks or position monetization controls beside gameplay.
 
 ## Leaderboard
 
