@@ -1,6 +1,6 @@
 /**
- * Two persistent sidebar placements on the start and results screens.
- * Deliberately NEVER reload ads for each game/retry.
+ * Two persistent sidebar placements on the content-rich landing page only.
+ * Deliberately NEVER show or reload ads during gameplay or on results.
  *
  * This file only makes ad requests after you add actual AdSense IDs
  * to ads-config.js. Without IDs, slots remain tasteful placeholders.
@@ -51,7 +51,7 @@
     if (
       started ||
       !spaciousScreen.matches ||
-      document.body.classList.contains("playing")
+      !document.body.classList.contains("landing")
     ) {
       return;
     }
@@ -85,8 +85,8 @@
     spaciousScreen.addListener(initializeAds);
   }
 
-  // If the user happened to start scrolling before initialization,
-  // try again at the next game-over transition.
+  // Re-evaluate only when the page returns to the landing state.
+  // The existing ad units are reused; no new impressions are requested on retry.
   const mutation = new MutationObserver(initializeAds);
   mutation.observe(document.body, {
     attributes: true,
