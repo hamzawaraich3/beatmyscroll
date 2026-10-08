@@ -2597,3 +2597,68 @@ body:not(.landing) #start-screen {
     min-width: 0;
   }
 }
+
+
+/* =========================================================
+   LANDING NAVIGATION
+========================================================= */
+
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 0;
+  background:
+    linear-gradient(to bottom, rgba(5,5,5,0.96), rgba(5,5,5,0.72), transparent);
+  backdrop-filter: blur(8px);
+}
+
+.landing-brand {
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.landing-brand span {
+  color: var(--green);
+}
+
+.landing-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.landing-nav-links a {
+  color: #7f8e96;
+  text-decoration: none;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 1.2px;
+}
+
+.landing-nav-links a:hover,
+.landing-nav-links a:focus-visible {
+  color: var(--cyan);
+}
+
+@media (max-width: 720px) {
+  .landing-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 12px 0 8px;
+  }
+
+  .landing-nav-links {
+    justify-content: flex-start;
+    gap: 10px 14px;
+  }
+}
