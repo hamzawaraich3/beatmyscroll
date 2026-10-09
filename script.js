@@ -91,6 +91,25 @@ const AURA_HOLD = 11000;
 const AURA_SLOW_EXIT_SPEED = 25;
 const STAGE_DROP_GRACE = 1200;
 
+const ARCADE_RANKS = [
+  { letter: "D", name: "WARMING UP", min: 0 },
+  { letter: "C", name: "MOVING", min: 7 },
+  { letter: "B", name: "COOKING", min: 13 },
+  { letter: "A", name: "LOCKED IN", min: 20 },
+  { letter: "S", name: "UNHINGED", min: 30 },
+  { letter: "SS", name: "MENACE", min: 42 },
+  { letter: "SSS", name: "SCROLL DEMON", min: 58 }
+];
+
+const ARCADE_ZONES = [
+  { score: 0, number: "ZONE 1", name: "WARMUP", color: "#b7ff32" },
+  { score: 1200, number: "ZONE 2", name: "REDLINE", color: "#21e6ff" },
+  { score: 3500, number: "ZONE 3", name: "HYPERLANE", color: "#8a5cff" },
+  { score: 7500, number: "ZONE 4", name: "THE VOID", color: "#ff2bd6" },
+  { score: 14000, number: "ZONE 5", name: "LIMIT BREAK", color: "#ff9d2e" },
+  { score: 24000, number: "ZONE 6", name: "ABSURD", color: "#ff3b3b" }
+];
+
 
 /* =========================================================
    ELEMENTS
@@ -159,6 +178,13 @@ const scoreDisplay = document.getElementById("score");
 const timerDisplay = document.getElementById("timer");
 const speedDisplay = document.getElementById("speed-display");
 const comboDisplay = document.getElementById("combo-display");
+const rushChainDisplay = document.getElementById("rush-chain");
+const rankDisplay = document.getElementById("arcade-rank");
+const rankLetterDisplay = document.getElementById("rank-letter");
+const rankNameDisplay = document.getElementById("rank-name");
+const zoneBanner = document.getElementById("zone-banner");
+const zoneNumberDisplay = document.getElementById("zone-number");
+const zoneNameDisplay = document.getElementById("zone-name");
 const bestScoreDisplay = document.getElementById("best-score");
 
 const finalScoreDisplay = document.getElementById("final-score");
@@ -167,10 +193,14 @@ const finalAvgSpeedDisplay = document.getElementById("final-avg-speed");
 const finalSpeedDisplay = document.getElementById("final-speed");
 const finalComboDisplay = document.getElementById("final-combo");
 const finalBestDisplay = document.getElementById("final-best");
+const finalGradeDisplay = document.getElementById("final-grade");
+const runTitleDisplay = document.getElementById("run-title");
+const runSummaryDisplay = document.getElementById("run-summary");
 
 const gameMessage = document.getElementById("game-message");
 const distanceMarker = document.getElementById("distance-marker");
 const dangerFill = document.getElementById("danger-fill");
+const dangerText = document.getElementById("danger-text");
 
 const retryButton = document.getElementById("retry-button");
 const shareButton = document.getElementById("share-button");
@@ -252,6 +282,14 @@ let wasHyperspace = false;
 let lastScorePopBucket = -1;
 let lastSpeedPopBucket = -1;
 let messageAnimTimer = null;
+
+let currentRankIndex = 0;
+let highestRankIndex = 0;
+let currentZoneIndex = 0;
+let rushStreak = 0;
+let maxRushStreak = 0;
+let panicLatched = false;
+let zoneBannerTimer = null;
 
 const urlParams = new URLSearchParams(window.location.search);
 const parsedChallengeScore = Number(urlParams.get("score"));
@@ -907,6 +945,193 @@ function formatCombo(value) {
   );
 }
 
+function haptic(pattern) {
+  if (
+    navigator.maxTouchPoints > 0 &&
+    typeof navigator.vibrate === "function"
+  ) {
+    try {
+      navigator.vibrate(pattern);
+    } catch (error) {}
+  }
+}
+
+function getRankIndex(speed) {
+  let index = 0;
+
+  for (let i = 1; i < ARCADE_RANKS.length; i++) {
+    if (speed >= ARCADE_RANKS[i].min) {
+      index = i;
+    } else {
+      break;
+    }
+  }
+
+  return index;
+}
+
+function updateArcadeRank(speed) {
+  const nextIndex = getRankIndex(speed);
+
+  if (nextIndex === currentRankIndex) {
+    return;
+  }
+
+  const previousIndex = currentRankIndex;
+  currentRankIndex = nextIndex;
+  highestRankIndex =
+    Math.max(highestRankIndex, nextIndex);
+
+  const rank = ARCADE_RANKS[nextIndex];
+
+  rankLetterDisplay.textContent = rank.letter;
+  rankNameDisplay.textContent = rank.name;
+
+  rankDisplay.className =
+    "arcade-rank rank-" +
+    rank.letter.toLowerCase();
+
+  if (
+    nextIndex > previousIndex &&
+    nextIndex >= 3
+  ) {
+    rankDisplay.classList.add("rank-up");
+
+    setTimeout(function() {
+      rankDisplay.classList.remove("rank-up");
+    }, 420);
+
+    if (nextIndex >= 4) {
+      haptic(14);
+    }
+  }
+}
+
+function showZone(index) {
+  const zone = ARCADE_ZONES[index];
+
+  zoneNumberDisplay.textContent = zone.number;
+  zoneNameDisplay.textContent = zone.name;
+
+  zoneBanner.style.setProperty(
+    "--zone-color",
+    zone.color
+  );
+
+  zoneBanner.classList.remove("visible");
+
+  if (!liteMode) {
+    void zoneBanner.offsetWidth;
+  }
+
+  zoneBanner.classList.add("visible");
+
+  if (zoneBannerTimer) {
+    clearTimeout(zoneBannerTimer);
+  }
+
+  zoneBannerTimer = setTimeout(function() {
+    zoneBanner.classList.remove("visible");
+  }, 1350);
+
+  if (index > 0) {
+    haptic([12, 35, 18]);
+    triggerImpact(
+      index >= 4
+        ? "pink"
+        : "cyan"
+    );
+  }
+}
+
+function updateZone(roundedScore) {
+  let nextIndex = currentZoneIndex;
+
+  for (
+    let i = currentZoneIndex + 1;
+    i < ARCADE_ZONES.length;
+    i++
+  ) {
+    if (roundedScore >= ARCADE_ZONES[i].score) {
+      nextIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  if (nextIndex !== currentZoneIndex) {
+    currentZoneIndex = nextIndex;
+    showZone(nextIndex);
+  }
+}
+
+function getRunGrade(averageSpeed, seconds, combo) {
+  const gradeScore =
+    averageSpeed +
+    Math.min(12, seconds * 0.25) +
+    Math.min(8, Math.max(0, combo - 1) * 2);
+
+  if (gradeScore >= 65) return "SSS";
+  if (gradeScore >= 50) return "SS";
+  if (gradeScore >= 38) return "S";
+  if (gradeScore >= 28) return "A";
+  if (gradeScore >= 18) return "B";
+  if (gradeScore >= 10) return "C";
+  return "D";
+}
+
+function getRunVerdict(averageSpeed, seconds) {
+  if (
+    highestRankIndex >= 6 ||
+    averageSpeed >= 48
+  ) {
+    return {
+      title: "SCROLL DEMON",
+      summary: "The browser witnessed something it cannot explain."
+    };
+  }
+
+  if (maxRushStreak >= 4) {
+    return {
+      title: "RUSH ADDICT",
+      summary: "You saw every neon circle and chose violence."
+    };
+  }
+
+  if (maxSpeed >= 60) {
+    return {
+      title: "WHEEL DESTROYER",
+      summary: "Peak speed was absolutely unnecessary. Excellent."
+    };
+  }
+
+  if (seconds >= 30) {
+    return {
+      title: "ENDURANCE SPECIMEN",
+      summary: "Not the fastest death. Definitely the longest problem."
+    };
+  }
+
+  if (highestRankIndex >= 4) {
+    return {
+      title: "LOCKED IN",
+      summary: "You crossed into S-rank territory. It gets worse from here."
+    };
+  }
+
+  if (averageSpeed >= 15) {
+    return {
+      title: "CERTIFIED MENACE",
+      summary: "Solid pace. The scroll wheel has started noticing you."
+    };
+  }
+
+  return {
+    title: "CERTIFIED SCROLLER",
+    summary: "Warm up, hit the RUSH targets, and run it back."
+  };
+}
+
 function pickBoostTier() {
   const totalWeight =
     BOOST_TIERS.reduce(
@@ -1191,6 +1416,7 @@ function setPowerStage(nextStage, now) {
   }
 
   if (nextStage === "goku") {
+    haptic([18, 35, 28]);
     stopMusic();
 
     showMoment(
@@ -1209,6 +1435,7 @@ function setPowerStage(nextStage, now) {
   }
 
   if (nextStage === "alquimia") {
+    haptic([12, 22, 12]);
     showMoment(
       "knightImage",
       "LOCKED IN",
@@ -1222,6 +1449,7 @@ function setPowerStage(nextStage, now) {
   }
 
   if (nextStage === "aura") {
+    haptic([20, 25, 20, 25, 30]);
     showMoment(
       "auraImage",
       "AURA MODE",
@@ -1444,6 +1672,12 @@ function updateHUD(force) {
   comboDisplay.textContent =
     formatCombo(comboMultiplier);
 
+  rushChainDisplay.textContent =
+    "RUSH CHAIN " + rushStreak;
+
+  updateArcadeRank(currentSpeed);
+  updateZone(roundedScore);
+
   if (
     challengeScore > 0 &&
     !challengeBeaten &&
@@ -1531,6 +1765,16 @@ function finishBoost(success, now) {
   boostTarget.classList.add("hidden");
 
   if (success) {
+    rushStreak += 1;
+    maxRushStreak =
+      Math.max(maxRushStreak, rushStreak);
+
+    haptic(
+      rushStreak >= 3
+        ? [10, 25, 12]
+        : 10
+    );
+
     comboMultiplier =
       Math.max(
         comboMultiplier,
@@ -1544,10 +1788,14 @@ function finishBoost(success, now) {
       now + COMBO_DURATION;
 
     showBoostToast(
-      "RUSH " + formatCombo(currentBoostTier.multiplier),
+      rushStreak >= 2
+        ? "RUSH CHAIN " + rushStreak + " · " +
+          formatCombo(currentBoostTier.multiplier)
+        : "RUSH " + formatCombo(currentBoostTier.multiplier),
       false
     );
   } else {
+    rushStreak = 0;
     comboMultiplier = 1;
     comboExpiresAt = 0;
 
@@ -1663,6 +1911,13 @@ function startGame() {
   lastScorePopBucket = -1;
   lastSpeedPopBucket = -1;
 
+  currentRankIndex = 0;
+  highestRankIndex = 0;
+  currentZoneIndex = 0;
+  rushStreak = 0;
+  maxRushStreak = 0;
+  panicLatched = false;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -1702,6 +1957,12 @@ function startGame() {
 
   gameMessage.textContent = "GO.";
   gameMessage.style.color = "";
+
+  rankDisplay.className = "arcade-rank rank-d";
+  rankLetterDisplay.textContent = "D";
+  rankNameDisplay.textContent = "WARMING UP";
+  rushChainDisplay.textContent = "RUSH CHAIN 0";
+  zoneBanner.classList.remove("visible");
 
   updateHUD(true);
 }
@@ -2029,6 +2290,25 @@ function gameLoop(now) {
           isCritical
             ? "#ff3b3b"
             : "#b7ff32";
+
+        body.classList.toggle(
+          "panic",
+          isCritical
+        );
+
+        dangerText.textContent =
+          isCritical
+            ? "MOVE. NOW."
+            : "DON'T STOP";
+
+        if (isCritical && !panicLatched) {
+          panicLatched = true;
+          haptic(18);
+        }
+
+        if (!isCritical) {
+          panicLatched = false;
+        }
       }
     }
 
@@ -2288,6 +2568,32 @@ function endGame(now) {
   finalAvgSpeedDisplay.textContent =
     averageSpeed.toFixed(1) + "/s";
 
+  const runSeconds =
+    finalElapsed / 1000;
+
+  const runGrade =
+    getRunGrade(
+      averageSpeed,
+      runSeconds,
+      maxCombo
+    );
+
+  const verdict =
+    getRunVerdict(
+      averageSpeed,
+      runSeconds
+    );
+
+  finalGradeDisplay.textContent = runGrade;
+  finalGradeDisplay.dataset.grade =
+    runGrade.toLowerCase();
+
+  runTitleDisplay.textContent =
+    verdict.title;
+
+  runSummaryDisplay.textContent =
+    verdict.summary;
+
   finalSpeedDisplay.textContent =
     maxSpeed.toFixed(1) + "/s";
 
@@ -2315,9 +2621,11 @@ function endGame(now) {
 
   hideMoment();
   triggerImpact("pink");
+  haptic([24, 45, 24]);
 
   body.classList.remove(
     "playing",
+    "panic",
     "speed-2",
     "speed-3",
     "speed-4",
@@ -2393,6 +2701,13 @@ function resetGame() {
   lastScorePopBucket = -1;
   lastSpeedPopBucket = -1;
 
+  currentRankIndex = 0;
+  highestRankIndex = 0;
+  currentZoneIndex = 0;
+  rushStreak = 0;
+  maxRushStreak = 0;
+  panicLatched = false;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -2414,6 +2729,11 @@ function resetGame() {
   speedDisplay.innerHTML =
     '0.0 <small>scrolls/s</small>';
   comboDisplay.textContent = "×1";
+  rushChainDisplay.textContent = "RUSH CHAIN 0";
+  rankDisplay.className = "arcade-rank rank-d";
+  rankLetterDisplay.textContent = "D";
+  rankNameDisplay.textContent = "WARMING UP";
+  zoneBanner.classList.remove("visible");
   distanceMarker.textContent = "0";
 
   dangerFill.style.transform =
@@ -2421,6 +2741,9 @@ function resetGame() {
 
   dangerFill.style.background =
     "#b7ff32";
+
+  dangerText.textContent =
+    "DON'T STOP";
 
   gameMessage.textContent =
     "KEEP SCROLLING";
@@ -2445,6 +2768,7 @@ function resetGame() {
 
   body.classList.remove(
     "playing",
+    "panic",
     "speed-2",
     "speed-3",
     "speed-4",
