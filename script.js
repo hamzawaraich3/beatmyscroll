@@ -1033,7 +1033,26 @@ function updateArcadeRank(speed) {
     }, 420);
 
     if (nextIndex >= 4) {
-      haptic(14);
+      haptic(
+        nextIndex >= 6
+          ? [12, 18, 18]
+          : 14
+      );
+
+      triggerImpact(
+        nextIndex >= 6
+          ? "pink"
+          : "cyan"
+      );
+
+      slamGameMessage(
+        rank.letter + " RANK",
+        nextIndex >= 6
+          ? "#ff4c4c"
+          : rank.letter === "SS"
+            ? "#ff9d2e"
+            : "#ff2bd6"
+      );
     }
   }
 }
@@ -1981,6 +2000,32 @@ function finishBoost(success, now) {
         : "RUSH " + formatCombo(currentBoostTier.multiplier),
       false
     );
+
+    if (rushStreak === 3) {
+      slamGameMessage(
+        "RUSH FRENZY",
+        "#21e6ff"
+      );
+      triggerImpact("cyan");
+    }
+
+    if (rushStreak === 5) {
+      slamGameMessage(
+        "RUSH FIEND",
+        "#ff2bd6"
+      );
+      impactBurst("pink", 2, 110);
+    }
+
+    if (
+      rushStreak > 5 &&
+      rushStreak % 3 === 0
+    ) {
+      slamGameMessage(
+        "CHAIN ×" + rushStreak,
+        "#b7ff32"
+      );
+    }
   } else {
     rushStreak = 0;
     comboMultiplier = 1;
