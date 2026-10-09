@@ -3515,3 +3515,23 @@ body.lite-mode .pb-ghost strong {
     line-height: 1.25;
   }
 }
+
+
+/* Intermediate widths: keep the center announcement physically below
+   the larger upper-right media card so the two can never collide. */
+@media (max-width: 800px) {
+  .moment-card {
+    width: clamp(126px, 24vw, 158px);
+  }
+
+  .zone-banner {
+    top: 252px;
+    min-width: min(390px, 82vw);
+  }
+}
+
+@media (max-width: 600px) {
+  .zone-banner {
+    top: 248px;
+  }
+}
