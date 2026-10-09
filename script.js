@@ -2044,17 +2044,24 @@ function spawnBoost(now) {
   boostDeadline =
     now + currentBoostTier.window;
 
+  const compactView =
+    window.innerWidth <= 600;
+
   const left =
-    50 + (Math.random() - 0.5) * 26;
+    compactView
+      ? 50
+      : 50 + (Math.random() - 0.5) * 16;
 
   const top =
-    55 + (Math.random() - 0.5) * 16;
+    compactView
+      ? 62
+      : 60 + (Math.random() - 0.5) * 8;
 
   const gateYaw =
-    (left - 50) * -0.75;
+    (left - 50) * -0.9;
 
   const gatePitch =
-    (top - 55) * 0.34;
+    (top - 60) * 0.30;
 
   boostTarget.style.left = left + "%";
   boostTarget.style.top = top + "%";
@@ -2097,6 +2104,7 @@ function spawnBoost(now) {
   boostApproach.style.opacity = "0.26";
 
   boostTarget.classList.remove("hidden");
+  body.classList.add("rush-active");
 }
 
 function showBoostToast(text, missed) {
@@ -2118,8 +2126,18 @@ function finishBoost(success, now) {
 
   boostActive = false;
   boostTarget.classList.add("hidden");
+  body.classList.remove("rush-active");
 
   if (success) {
+    if (!liteMode) {
+      depthTunnel.classList.remove("tunnel-punch");
+      void depthTunnel.offsetWidth;
+      depthTunnel.classList.add("tunnel-punch");
+
+      setTimeout(function() {
+        depthTunnel.classList.remove("tunnel-punch");
+      }, 420);
+    }
     rushStreak += 1;
     maxRushStreak =
       Math.max(maxRushStreak, rushStreak);
@@ -3074,6 +3092,7 @@ function endGame(now) {
   body.classList.remove(
     "playing",
     "panic",
+    "rush-active",
     "speed-2",
     "speed-3",
     "speed-4",
@@ -3235,6 +3254,7 @@ function resetGame() {
   body.classList.remove(
     "playing",
     "panic",
+    "rush-active",
     "speed-2",
     "speed-3",
     "speed-4",
