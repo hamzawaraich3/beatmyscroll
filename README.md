@@ -4,10 +4,9 @@ A one-page scroll endurance game with opt-in worldwide rankings.
 
 ## Better sound quality (optional high-quality upgrade)
 
-The game selects the best audio source available:
-
-1. Full-quality `audio/*.mp3` files on the website (user-provided original recordings).
-2. The original embedded clips in `media/*.js` until the HQ audio is uploaded.
+The game now uses the full-quality `audio/*.mp3` files directly. Large
+tracks are marked `preload="none"` in JavaScript so older devices do not
+download or decode several megabytes of music before it is needed.
 
 The music manager avoids unnecessary restarts and fades between stages rather
 than abruptly cutting and replaying tracks at every speed fluctuation.
@@ -26,9 +25,9 @@ audio/click.mp3
 audio/fahh.mp3
 ```
 
-After committing, Cloudflare redeploys the assets; the JS player selects them
-automatically and streams long songs as needed. All files must be present
-for reliable results. The fallback soundtrack remains available until upload.
+After committing, Cloudflare redeploys the assets; the JS player streams the
+songs only when their speed stage is reached. All six files are now present in
+the repository.
 
 IMPORTANT: These recordings may be protected by copyright. Obtain the
 appropriate licenses before using them on a monetized public website, or
