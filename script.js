@@ -98,6 +98,50 @@ const STAGE_DROP_GRACE = 1200;
 
 const body = document.body;
 
+const qualityOverride =
+  new URLSearchParams(window.location.search).get("quality");
+
+const reportedMemory =
+  Number(navigator.deviceMemory || 0);
+
+const reportedCores =
+  Number(navigator.hardwareConcurrency || 0);
+
+const prefersReducedMotion =
+  window.matchMedia &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const saveDataEnabled =
+  Boolean(
+    navigator.connection &&
+    navigator.connection.saveData
+  );
+
+let liteMode =
+  qualityOverride !== "full" &&
+  (
+    qualityOverride === "lite" ||
+    saveDataEnabled ||
+    prefersReducedMotion ||
+    (reportedMemory > 0 && reportedMemory <= 4) ||
+    (reportedCores > 0 && reportedCores <= 4)
+  );
+
+body.classList.toggle("lite-mode", liteMode);
+
+let slowFrameCount = 0;
+let lastVisualPaint = 0;
+let lastHudPaint = 0;
+let visualLineLimit = liteMode ? 10 : 24;
+
+function enableLiteMode() {
+  if (liteMode || qualityOverride === "full") return;
+
+  liteMode = true;
+  visualLineLimit = 10;
+  body.classList.add("lite-mode");
+}
+
 const startScreen = document.getElementById("start-screen");
 const gameScreen = document.getElementById("game-screen");
 const gameOverScreen = document.getElementById("game-over");
@@ -219,10 +263,61 @@ let challengeMessageLockUntil = 0;
 ========================================================= */
 
 
-const MEDIA = window.BMS_MEDIA || {};
+window.BMS_MEDIA = window.BMS_MEDIA || {};
+const MEDIA = window.BMS_MEDIA;
 
-// When full-quality MP3s exist, use them. Until they are uploaded,
-// keep the original embedded clips as a compatibility fallback.
+const MOMENT_MEDIA_SCRIPTS = {
+  sonicImage: "media/sonic-image.js",
+  gokuImage: "media/goku-image.js",
+  knightImage: "media/knight-image.js",
+  auraImage: "media/aura-image.js"
+};
+
+const momentMediaPromises = new Map();
+
+function loadMomentMedia(imageKey) {
+  if (MEDIA[imageKey]) {
+    return Promise.resolve(MEDIA[imageKey]);
+  }
+
+  if (momentMediaPromises.has(imageKey)) {
+    return momentMediaPromises.get(imageKey);
+  }
+
+  const src = MOMENT_MEDIA_SCRIPTS[imageKey];
+
+  if (!src) {
+    return Promise.reject(
+      new Error("Unknown moment media: " + imageKey)
+    );
+  }
+
+  const promise = new Promise(function(resolve, reject) {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+
+    script.onload = function() {
+      if (MEDIA[imageKey]) {
+        resolve(MEDIA[imageKey]);
+      } else {
+        reject(new Error("Moment media did not register."));
+      }
+    };
+
+    script.onerror = function() {
+      reject(new Error("Moment media failed to load."));
+    };
+
+    document.head.appendChild(script);
+  });
+
+  momentMediaPromises.set(imageKey, promise);
+  return promise;
+}
+
+// Full-quality MP3s are real static files now, so no legacy audio
+// scripts or availability probe is needed.
 const HQ_AUDIO = {
   click: "audio/click.mp3",
   sonic: "audio/sonic.mp3",
@@ -258,29 +353,8 @@ const playingEffects = new Set();
 let soundEnabled =
   localStorage.getItem("beatMyScrollSound") !== "off";
 
-async function findAudioSources() {
-  // HEAD checks do not download whole songs. Cloudflare must serve
-  // actual audio MIME types, not an index.html 404 fallback.
-  try {
-    const head = await fetch(HQ_AUDIO.sonic, {
-      method: "HEAD",
-      cache: "no-cache"
-    });
-
-    const type =
-      (head.headers.get("content-type") || "").toLowerCase();
-
-    if (
-      head.ok &&
-      (type.includes("audio/") || type.includes("mpeg"))
-    ) {
-      return HQ_AUDIO;
-    }
-  } catch (error) {
-    // The site's optional HQ audio folder has not been added yet.
-  }
-
-  return MEDIA;
+function findAudioSources() {
+  return Promise.resolve(HQ_AUDIO);
 }
 
 function ensureAudioBank() {
@@ -303,14 +377,15 @@ function ensureAudioBank() {
 
       for (const key of required) {
         const element = new Audio();
-        element.src = sources[key];
 
-        // Larger songs stream instead of blocking initial page load.
+        // Critical for low-end devices: do not download/decode multi-MB
+        // tracks until the game actually asks to play them.
         element.preload =
-          ["sonic", "alquimia", "aura"].includes(key)
-            ? "metadata"
-            : "auto";
+          key === "click"
+            ? "auto"
+            : "none";
 
+        element.src = sources[key];
         element.volume = AUDIO_VOLUME[key];
         element.loop =
           ["sonic", "alquimia", "aura"].includes(key);
@@ -650,7 +725,7 @@ const messages = [
 
 const speedLines = [];
 
-for (let i = 0; i < 36; i++) {
+for (let i = 0; i < 24; i++) {
   const line = document.createElement("div");
 
   line.className = "speed-line";
@@ -727,6 +802,8 @@ function getAverageSpeed(now) {
 }
 
 function animateNumber(element) {
+  if (liteMode) return;
+
   element.classList.remove("number-pop");
 
   void element.offsetWidth;
@@ -739,6 +816,12 @@ function animateNumber(element) {
 }
 
 function slamGameMessage(message, color) {
+  if (liteMode) {
+    gameMessage.textContent = message;
+    gameMessage.style.color = color || "";
+    return;
+  }
+
   if (messageAnimTimer) {
     clearTimeout(messageAnimTimer);
   }
@@ -764,6 +847,12 @@ function slamGameMessage(message, color) {
 }
 
 function crumbleToMessage(message) {
+  if (liteMode) {
+    gameMessage.textContent = message;
+    gameMessage.style.color = "";
+    return;
+  }
+
   if (messageAnimTimer) {
     clearTimeout(messageAnimTimer);
   }
@@ -793,7 +882,11 @@ function crumbleToMessage(message) {
 }
 
 function impactBurst(kind, count, gap) {
-  const total = count || 2;
+  const total =
+    liteMode
+      ? 1
+      : (count || 2);
+
   const spacing = gap || 150;
 
   for (let i = 0; i < total; i++) {
@@ -804,6 +897,33 @@ function impactBurst(kind, count, gap) {
 }
 
 function triggerImpact(kind) {
+  if (liteMode) {
+    body.classList.remove(
+      "impact-frame",
+      "impact-gold",
+      "impact-cyan",
+      "impact-pink",
+      "impact-green"
+    );
+
+    body.classList.add(
+      "impact-frame",
+      "impact-" + kind
+    );
+
+    setTimeout(function() {
+      body.classList.remove(
+        "impact-frame",
+        "impact-gold",
+        "impact-cyan",
+        "impact-pink",
+        "impact-green"
+      );
+    }, 260);
+
+    return;
+  }
+
   body.classList.remove(
     "impact-frame",
     "impact-gold",
@@ -838,14 +958,25 @@ function showMoment(imageKey, label, color) {
 
   momentImage.alt = label;
   momentLabel.textContent = label;
-
   momentCard.classList.remove("hidden");
 
   if (MEDIA[imageKey]) {
     momentImage.src = MEDIA[imageKey];
-  } else {
-    momentCard.classList.add("hidden");
+    return;
   }
+
+  momentImage.removeAttribute("src");
+
+  void loadMomentMedia(imageKey)
+    .then(function(src) {
+      if (momentLabel.textContent === label) {
+        momentImage.src = src;
+      }
+    })
+    .catch(function() {
+      // Keep the stage label/effect even if optional art fails.
+      momentImage.removeAttribute("src");
+    });
 }
 
 function hideMoment() {
@@ -1116,7 +1247,16 @@ function calculateSpeedMultiplier() {
   );
 }
 
-function updateHUD() {
+function updateHUD(force) {
+  const now = performance.now();
+  const interval = liteMode ? 90 : 45;
+
+  if (!force && now - lastHudPaint < interval) {
+    return;
+  }
+
+  lastHudPaint = now;
+
   const roundedScore = Math.floor(score);
 
   scoreDisplay.textContent =
@@ -1363,6 +1503,10 @@ function startGame() {
   lastScorePopBucket = -1;
   lastSpeedPopBucket = -1;
 
+  lastVisualPaint = 0;
+  lastHudPaint = 0;
+  slowFrameCount = 0;
+
   startTime = now;
   lastInputTime = now;
   lastInputEventTime = 0;
@@ -1394,7 +1538,7 @@ function startGame() {
   gameMessage.textContent = "GO.";
   gameMessage.style.color = "";
 
-  updateHUD();
+  updateHUD(true);
 }
 
 
@@ -1656,20 +1800,40 @@ function updateMessage() {
 ========================================================= */
 
 function gameLoop(now) {
+  const rawFrameDelta =
+    now - lastFrameTime;
+
   const frameDelta =
-    clamp(now - lastFrameTime, 1, 50);
+    clamp(rawFrameDelta, 1, 50);
 
   lastFrameTime = now;
 
   if (state === "playing") {
+    // Devices that cannot sustain ~35fps automatically shed expensive
+    // decoration. Gameplay timing/scoring remains on every animation frame.
+    if (!liteMode && rawFrameDelta > 28) {
+      slowFrameCount += 1;
+
+      if (slowFrameCount >= 18) {
+        enableLiteMode();
+      }
+    } else if (!liteMode) {
+      slowFrameCount =
+        Math.max(0, slowFrameCount - 1);
+    }
     const elapsed =
       now - startTime;
 
     const idleTime =
       now - lastInputTime;
 
-    timerDisplay.textContent =
-      (elapsed / 1000).toFixed(1) + "s";
+    if (
+      now - lastHudPaint >=
+      (liteMode ? 90 : 45)
+    ) {
+      timerDisplay.textContent =
+        (elapsed / 1000).toFixed(1) + "s";
+    }
 
     const remaining =
       Math.max(
@@ -1745,57 +1909,73 @@ function gameLoop(now) {
       velocity *
       (frameDelta / 16.67);
 
-    const gridMovement =
-      visualDistance % 140;
+    const visualInterval =
+      liteMode ? 33 : 16;
 
-    grid.style.backgroundPosition =
-      "0 " + gridMovement + "px";
+    if (now - lastVisualPaint >= visualInterval) {
+      lastVisualPaint = now;
 
-    const speedIntensity =
-      clamp(
-        scrollRate / 5200,
-        0,
-        1
-      );
+      const gridMovement =
+        visualDistance % 140;
 
-    const lineOpacity =
-      0.10 +
-      speedIntensity * 0.84;
+      grid.style.backgroundPosition =
+        "0 " + gridMovement + "px";
 
-    const lineStretch =
-      0.65 +
-      speedIntensity * 10.5;
+      const speedIntensity =
+        clamp(
+          scrollRate / 5200,
+          0,
+          1
+        );
 
-    const lineBlur =
-      speedIntensity * 1.8;
+      const lineOpacity =
+        0.10 +
+        speedIntensity * 0.84;
 
-    const lineBrightness =
-      0.75 +
-      speedIntensity * 1.9;
+      const lineStretch =
+        0.65 +
+        speedIntensity * 10.5;
 
-    speedLinesContainer.style.opacity =
-      lineOpacity;
+      speedLinesContainer.style.opacity =
+        lineOpacity;
 
-    speedLinesContainer.style.setProperty(
-      "--speed-blur",
-      lineBlur.toFixed(2) + "px"
-    );
+      if (!liteMode) {
+        const lineBlur =
+          speedIntensity * 1.8;
 
-    speedLinesContainer.style.setProperty(
-      "--speed-brightness",
-      lineBrightness.toFixed(2)
-    );
+        const lineBrightness =
+          0.75 +
+          speedIntensity * 1.9;
 
-    speedLinesContainer.style.setProperty(
-      "--speed-glow",
-      (
-        3 +
-        speedIntensity * 16
-      ).toFixed(1) + "px"
-    );
+        speedLinesContainer.style.setProperty(
+          "--speed-blur",
+          lineBlur.toFixed(2) + "px"
+        );
 
-    speedLines.forEach(
-      function(line, index) {
+        speedLinesContainer.style.setProperty(
+          "--speed-brightness",
+          lineBrightness.toFixed(2)
+        );
+
+        speedLinesContainer.style.setProperty(
+          "--speed-glow",
+          (
+            3 +
+            speedIntensity * 16
+          ).toFixed(1) + "px"
+        );
+      }
+
+      const viewportLoop =
+        window.innerHeight + 340;
+
+      for (
+        let index = 0;
+        index < visualLineLimit;
+        index++
+      ) {
+        const line = speedLines[index];
+
         const startingPoint =
           Number(line.dataset.offset);
 
@@ -1809,19 +1989,16 @@ function gameLoop(now) {
               index / 65
             )
           ) %
-          (
-            window.innerHeight +
-            340
-          );
+          viewportLoop;
 
         line.style.transform =
-          "translateY(" +
-          (y - 120) +
-          "px) scaleY(" +
+          "translate3d(0," +
+          (y - 120).toFixed(1) +
+          "px,0) scaleY(" +
           lineStretch.toFixed(2) +
           ")";
       }
-    );
+    }
 
     body.classList.remove(
       "speed-2",
@@ -2022,6 +2199,10 @@ function resetGame() {
 
   lastScorePopBucket = -1;
   lastSpeedPopBucket = -1;
+
+  lastVisualPaint = 0;
+  lastHudPaint = 0;
+  slowFrameCount = 0;
 
   stopAllAudio();
   hideMoment();
