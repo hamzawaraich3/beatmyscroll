@@ -289,6 +289,7 @@ let currentZoneIndex = 0;
 let rushStreak = 0;
 let maxRushStreak = 0;
 let panicLatched = false;
+let clutchCount = 0;
 let zoneBannerTimer = null;
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -1061,6 +1062,8 @@ function updateZone(roundedScore) {
 
   if (nextIndex !== currentZoneIndex) {
     currentZoneIndex = nextIndex;
+    body.dataset.zone =
+      String(nextIndex + 1);
     showZone(nextIndex);
   }
 }
@@ -1095,6 +1098,13 @@ function getRunVerdict(averageSpeed, seconds) {
     return {
       title: "RUSH ADDICT",
       summary: "You saw every neon circle and chose violence."
+    };
+  }
+
+  if (clutchCount >= 3) {
+    return {
+      title: "CLUTCH MERCHANT",
+      summary: "You nearly died repeatedly and somehow made it a strategy."
     };
   }
 
@@ -1917,6 +1927,7 @@ function startGame() {
   rushStreak = 0;
   maxRushStreak = 0;
   panicLatched = false;
+  clutchCount = 0;
 
   lastVisualPaint = 0;
   lastHudPaint = 0;
@@ -1943,6 +1954,7 @@ function startGame() {
 
   body.classList.remove("landing");
   body.classList.add("playing");
+  body.dataset.zone = "1";
 
   body.classList.remove(
     "hyperspace",
@@ -2306,8 +2318,18 @@ function gameLoop(now) {
           haptic(18);
         }
 
-        if (!isCritical) {
+        if (!isCritical && panicLatched) {
           panicLatched = false;
+          clutchCount += 1;
+
+          showBoostToast(
+            clutchCount >= 2
+              ? "CLUTCH SAVE ×" + clutchCount
+              : "CLUTCH SAVE",
+            false
+          );
+
+          haptic([8, 18, 8]);
         }
       }
     }
@@ -2707,6 +2729,7 @@ function resetGame() {
   rushStreak = 0;
   maxRushStreak = 0;
   panicLatched = false;
+  clutchCount = 0;
 
   lastVisualPaint = 0;
   lastHudPaint = 0;
@@ -2779,6 +2802,7 @@ function resetGame() {
     "stage-aura"
   );
   body.classList.add("landing");
+  delete body.dataset.zone;
 
   gameOverScreen.classList.remove("active");
   gameScreen.classList.remove("active");
@@ -2859,7 +2883,11 @@ shareButton.addEventListener(
       seconds +
       " seconds with a max speed of " +
       maxSpeed.toFixed(1) +
-      " scrolls/s. Think you can beat me?";
+      " scrolls/s. Grade " +
+      finalGradeDisplay.textContent +
+      " — " +
+      runTitleDisplay.textContent +
+      ". Think you can beat me?";
 
     const shareData = {
       title: "Beat My Scroll",
