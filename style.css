@@ -4174,3 +4174,68 @@ body.lite-mode .boost-target.rush-gate .boost-core {
     font-size: clamp(34px, 13vw, 50px);
   }
 }
+
+
+/* =========================================================
+   RUSH GATE STAGING + CAMERA PUNCH
+========================================================= */
+
+.boost-target.rush-gate .rush-gate-panel {
+  place-items: stretch;
+}
+
+.boost-target.rush-gate .rush-gate-panel::before {
+  background: transparent;
+}
+
+body.rush-active #game-message {
+  top: 38%;
+  opacity: 0.66;
+  transform:
+    translate(-50%, -50%)
+    scale(0.82);
+}
+
+body.rush-active #distance-marker {
+  opacity: 0.10;
+}
+
+body.rush-active .rush-gate {
+  z-index: 41;
+}
+
+.depth-tunnel.tunnel-punch {
+  animation:
+    tunnelPunch 0.38s cubic-bezier(.16,.75,.2,1);
+}
+
+@keyframes tunnelPunch {
+  0% {
+    filter: brightness(1);
+  }
+
+  28% {
+    filter:
+      brightness(1.8)
+      saturate(1.35);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@media (max-width: 600px) {
+  body.rush-active #game-message {
+    top: 34%;
+    font-size: clamp(34px, 12vw, 64px);
+  }
+
+  body.rush-active #distance-marker {
+    opacity: 0.05;
+  }
+}
+
+body.lite-mode .depth-tunnel.tunnel-punch {
+  animation: none;
+}
