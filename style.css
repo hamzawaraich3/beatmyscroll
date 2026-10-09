@@ -3100,3 +3100,47 @@ body.lite-mode .arcade-rank strong {
     padding: 12px 14px;
   }
 }
+
+
+/* =========================================================
+   ZONE COLOR PROGRESSION
+========================================================= */
+
+body.playing[data-zone="2"]:not(.stage-sonic):not(.stage-goku):not(.stage-alquimia):not(.stage-aura) #scroll-world {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(33,230,255,0.11), transparent 30%),
+    radial-gradient(circle at 35% 72%, rgba(183,255,50,0.055), transparent 34%),
+    radial-gradient(circle at center, #101619 0%, #070a0c 50%, #020303 100%);
+}
+
+body.playing[data-zone="3"]:not(.stage-sonic):not(.stage-goku):not(.stage-alquimia):not(.stage-aura) #scroll-world {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(138,92,255,0.12), transparent 30%),
+    radial-gradient(circle at 70% 70%, rgba(33,230,255,0.07), transparent 34%),
+    radial-gradient(circle at center, #111018 0%, #08070c 50%, #020203 100%);
+}
+
+body.playing[data-zone="4"]:not(.stage-sonic):not(.stage-goku):not(.stage-alquimia):not(.stage-aura) #scroll-world {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,43,214,0.105), transparent 30%),
+    radial-gradient(circle at 28% 68%, rgba(138,92,255,0.075), transparent 34%),
+    radial-gradient(circle at center, #150d15 0%, #080508 52%, #020202 100%);
+}
+
+body.playing[data-zone="5"]:not(.stage-sonic):not(.stage-goku):not(.stage-alquimia):not(.stage-aura) #scroll-world {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,157,46,0.11), transparent 31%),
+    radial-gradient(circle at 72% 68%, rgba(255,43,214,0.065), transparent 34%),
+    radial-gradient(circle at center, #17100a 0%, #090604 52%, #020202 100%);
+}
+
+body.playing[data-zone="6"]:not(.stage-sonic):not(.stage-goku):not(.stage-alquimia):not(.stage-aura) #scroll-world {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,59,59,0.12), transparent 31%),
+    radial-gradient(circle at 28% 68%, rgba(255,157,46,0.07), transparent 34%),
+    radial-gradient(circle at center, #180a0a 0%, #090303 52%, #020202 100%);
+}
+
+body.lite-mode.playing[data-zone] #scroll-world {
+  transition: none;
+}
