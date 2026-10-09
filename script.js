@@ -132,6 +132,7 @@ body.classList.toggle("lite-mode", liteMode);
 let slowFrameCount = 0;
 let lastVisualPaint = 0;
 let lastHudPaint = 0;
+let lastTimerPaint = 0;
 let visualLineLimit = liteMode ? 10 : 24;
 let lastSpeedBand = -1;
 let dangerCritical = false;
@@ -1524,6 +1525,7 @@ function startGame() {
 
   lastVisualPaint = 0;
   lastHudPaint = 0;
+  lastTimerPaint = 0;
   slowFrameCount = 0;
   lastSpeedBand = -1;
   dangerCritical = false;
@@ -1857,9 +1859,11 @@ function gameLoop(now) {
       now - lastVisualPaint >= visualInterval;
 
     if (
-      now - lastHudPaint >=
-      (liteMode ? 90 : 45)
+      now - lastTimerPaint >=
+      (liteMode ? 100 : 50)
     ) {
+      lastTimerPaint = now;
+
       timerDisplay.textContent =
         (elapsed / 1000).toFixed(1) + "s";
     }
@@ -2250,6 +2254,7 @@ function resetGame() {
 
   lastVisualPaint = 0;
   lastHudPaint = 0;
+  lastTimerPaint = 0;
   slowFrameCount = 0;
   lastSpeedBand = -1;
   dangerCritical = false;
