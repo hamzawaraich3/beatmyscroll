@@ -3535,3 +3535,642 @@ body.lite-mode .pb-ghost strong {
     top: 248px;
   }
 }
+
+
+/* =========================================================
+   CSS-3D SPEED TUNNEL
+   Real perspective + translateZ, no canvas/WebGL dependency.
+========================================================= */
+
+.depth-tunnel {
+  --tunnel-color: #21e6ff;
+
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+
+  overflow: hidden;
+  opacity: 0;
+
+  perspective: 720px;
+  perspective-origin: 50% 48%;
+
+  pointer-events: none;
+
+  transition: opacity 0.18s;
+}
+
+.depth-stage {
+  position: absolute;
+  inset: 0;
+
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+
+  will-change: transform;
+}
+
+.depth-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  width: min(76vw, 980px);
+  height: min(56vh, 570px);
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--tunnel-color) 68%,
+      transparent
+    );
+
+  border-radius: 22px;
+
+  transform-style: preserve-3d;
+  transform-origin: center center;
+
+  box-shadow:
+    inset 0 0 20px
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 6%,
+        transparent
+      ),
+    0 0 14px
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 12%,
+        transparent
+      );
+
+  will-change: transform, opacity;
+}
+
+.depth-frame::before {
+  content: "";
+
+  position: absolute;
+  inset: 8%;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--tunnel-color) 22%,
+      transparent
+    );
+
+  border-radius: 16px;
+}
+
+.depth-frame::after {
+  content: "";
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 18%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 52%,
+        transparent
+      ),
+      transparent
+    );
+
+  transform:
+    translate(-50%, -50%)
+    translateZ(18px);
+}
+
+.depth-notch {
+  position: absolute;
+  left: 50%;
+
+  width: 1px;
+  height: 14%;
+
+  background:
+    linear-gradient(
+      transparent,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 60%,
+        transparent
+      ),
+      transparent
+    );
+
+  transform:
+    translateX(-50%)
+    translateZ(22px);
+}
+
+.depth-notch-top {
+  top: 0;
+}
+
+.depth-notch-bottom {
+  bottom: 0;
+}
+
+.depth-vanishing-point {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+
+  width: 7px;
+  height: 7px;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(45deg);
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--tunnel-color) 70%,
+      transparent
+    );
+
+  background:
+    rgba(5, 8, 12, 0.74);
+
+  box-shadow:
+    0 0 12px
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 28%,
+        transparent
+      );
+
+  opacity: 0.58;
+}
+
+/* The environment's 3D palette follows the run's progression. */
+body[data-zone="1"] .depth-tunnel {
+  --tunnel-color: #b7ff32;
+}
+
+body[data-zone="2"] .depth-tunnel {
+  --tunnel-color: #21e6ff;
+}
+
+body[data-zone="3"] .depth-tunnel {
+  --tunnel-color: #8a5cff;
+}
+
+body[data-zone="4"] .depth-tunnel {
+  --tunnel-color: #ff2bd6;
+}
+
+body[data-zone="5"] .depth-tunnel {
+  --tunnel-color: #ff9d2e;
+}
+
+body[data-zone="6"] .depth-tunnel {
+  --tunnel-color: #ff4c4c;
+}
+
+body.stage-aura .depth-tunnel {
+  --tunnel-color: #b7ff32;
+}
+
+
+/* =========================================================
+   3D RUSH GATE — REPLACES THE FLASHING CIRCLES
+========================================================= */
+
+.boost-target.rush-gate {
+  --gate-yaw: 0deg;
+  --gate-pitch: 0deg;
+  --gate-scale: 0.78;
+  --rush-progress: 0%;
+
+  width: clamp(205px, 25vw, 310px);
+  height: clamp(112px, 15vw, 172px);
+  aspect-ratio: auto;
+
+  display: block;
+
+  opacity: 0.94;
+
+  border: 0;
+  border-radius: 0;
+
+  filter: none !important;
+  animation: none !important;
+
+  perspective: 720px;
+  transform-style: preserve-3d;
+
+  transform:
+    translate(-50%, -50%)
+    rotateX(var(--gate-pitch))
+    rotateY(var(--gate-yaw))
+    scale(var(--gate-scale));
+
+  transition:
+    opacity 0.14s,
+    filter 0.14s;
+
+  will-change: transform;
+}
+
+.boost-target.rush-gate.hidden {
+  display: none;
+}
+
+.boost-target.rush-gate .rush-gate-frame {
+  position: absolute;
+  inset: -14px;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 38%,
+      transparent
+    );
+
+  border-radius: 10px;
+
+  box-shadow: none;
+
+  opacity: 0.24;
+
+  transform-style: preserve-3d;
+
+  will-change: transform, opacity;
+}
+
+.boost-target.rush-gate .rush-gate-panel {
+  position: absolute;
+  inset: 0;
+
+  overflow: hidden;
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 76%,
+      transparent
+    );
+
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 9, 13, 0.93),
+      rgba(8, 11, 17, 0.78)
+    );
+
+  box-shadow:
+    inset 0 0 24px
+      color-mix(
+        in srgb,
+        var(--rush-color) 7%,
+        transparent
+      ),
+    0 0 18px
+      color-mix(
+        in srgb,
+        var(--rush-color) 12%,
+        transparent
+      );
+
+  transform:
+    translateZ(20px);
+
+  transform-style: preserve-3d;
+}
+
+.boost-target.rush-gate .rush-gate-panel::before {
+  content: "";
+
+  position: absolute;
+  inset: 9px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.055);
+
+  border-radius: 5px;
+
+  pointer-events: none;
+}
+
+.boost-target.rush-gate .rush-gate-panel::after {
+  content: "";
+
+  position: absolute;
+  left: 0;
+  bottom: 0;
+
+  width: var(--rush-progress);
+  height: 3px;
+
+  background: var(--rush-color);
+
+  box-shadow:
+    0 0 10px
+      color-mix(
+        in srgb,
+        var(--rush-color) 48%,
+        transparent
+      );
+
+  transition: width 0.05s linear;
+}
+
+.rush-gate-header {
+  padding: 9px 12px 0;
+
+  color:
+    color-mix(
+      in srgb,
+      var(--rush-color) 82%,
+      #fff
+    );
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 3px;
+
+  text-align: left;
+}
+
+.boost-target.rush-gate .boost-copy {
+  position: relative;
+  z-index: 2;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "hint reward"
+    "progress reward";
+
+  align-content: center;
+  align-items: center;
+
+  gap: 5px 16px;
+
+  padding: 10px 15px 14px;
+
+  text-align: left;
+}
+
+.boost-target.rush-gate .boost-copy span {
+  grid-area: hint;
+
+  color: #89979f;
+
+  font-size: 8px;
+  letter-spacing: 1.5px;
+
+  text-align: left;
+}
+
+.boost-target.rush-gate .boost-copy em {
+  grid-area: reward;
+
+  color: var(--rush-color);
+
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 0.9;
+
+  text-shadow:
+    0 0 10px
+    color-mix(
+      in srgb,
+      var(--rush-color) 20%,
+      transparent
+    );
+}
+
+.boost-target.rush-gate .boost-copy strong {
+  grid-area: progress;
+
+  color: #fff;
+
+  font-size: 13px;
+  letter-spacing: 1px;
+
+  text-align: left;
+}
+
+.rush-gate-meter {
+  height: 4px;
+  margin: 0 12px 10px;
+
+  overflow: hidden;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  border-radius: 99px;
+}
+
+.rush-gate-meter-fill {
+  width: var(--rush-progress);
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        var(--rush-color) 70%,
+        #fff
+      ),
+      var(--rush-color)
+    );
+
+  transition: width 0.05s linear;
+}
+
+.rush-gate-depth {
+  position: absolute;
+
+  top: 8px;
+  bottom: 8px;
+
+  width: 18px;
+
+  border-top:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 26%,
+      transparent
+    );
+
+  border-bottom:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 26%,
+      transparent
+    );
+
+  opacity: 0.5;
+}
+
+.rush-gate-depth.depth-a {
+  left: -18px;
+
+  transform:
+    rotateY(72deg)
+    translateZ(-4px);
+
+  transform-origin: right center;
+
+  border-left:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 40%,
+      transparent
+    );
+}
+
+.rush-gate-depth.depth-b {
+  right: -18px;
+
+  transform:
+    rotateY(-72deg)
+    translateZ(-4px);
+
+  transform-origin: left center;
+
+  border-right:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--rush-color) 40%,
+      transparent
+    );
+}
+
+/* Explicitly kill every legacy circular behavior. */
+.boost-target.rush-gate,
+.boost-target.rush-gate .boost-approach,
+.boost-target.rush-gate .boost-core,
+.boost-target.rush-gate .boost-core::before {
+  border-radius: 8px;
+}
+
+.boost-target.rush-gate .boost-core {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 9, 13, 0.93),
+      rgba(8, 11, 17, 0.78)
+    ) !important;
+}
+
+body.speed-3 .boost-target.rush-gate {
+  filter: none !important;
+}
+
+
+/* =========================================================
+   HIGH-SPEED CAMERA FEEL
+========================================================= */
+
+body.speed-3 .depth-tunnel {
+  perspective: 665px;
+}
+
+body.speed-4 .depth-tunnel {
+  perspective: 610px;
+}
+
+body.stage-aura .depth-tunnel {
+  perspective: 560px;
+}
+
+body.speed-4 .depth-frame {
+  border-width: 1.5px;
+}
+
+
+/* =========================================================
+   PERFORMANCE / ACCESSIBILITY
+========================================================= */
+
+body.lite-mode .depth-frame:nth-child(n + 6) {
+  display: none !important;
+}
+
+body.lite-mode .depth-frame {
+  box-shadow: none;
+}
+
+body.lite-mode .depth-frame::after,
+body.lite-mode .depth-notch,
+body.lite-mode .depth-vanishing-point {
+  display: none;
+}
+
+body.lite-mode .boost-target.rush-gate {
+  perspective: none;
+}
+
+body.lite-mode .boost-target.rush-gate,
+body.lite-mode .boost-target.rush-gate .boost-approach,
+body.lite-mode .boost-target.rush-gate .boost-core {
+  transform-style: flat;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .depth-stage {
+    transform: none !important;
+  }
+
+  .depth-frame {
+    transition: none !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE 3D TUNING
+========================================================= */
+
+@media (max-width: 600px) {
+  .depth-tunnel {
+    perspective: 560px;
+  }
+
+  .depth-frame {
+    width: 88vw;
+    height: 50vh;
+    border-radius: 15px;
+  }
+
+  .boost-target.rush-gate {
+    width: min(270px, 74vw);
+    height: 128px;
+  }
+
+  .boost-target.rush-gate .boost-copy em {
+    font-size: clamp(34px, 13vw, 50px);
+  }
+}
