@@ -2813,3 +2813,290 @@ body.lite-mode .landing-nav {
     justify-content: flex-start;
   }
 }
+
+
+/* =========================================================
+   ARCADE FEEDBACK LAYER
+========================================================= */
+
+#rush-chain {
+  display: block;
+  margin-top: 4px;
+  color: #59646a;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+body.playing #rush-chain {
+  color: rgba(255,255,255,0.45);
+}
+
+.arcade-rank {
+  --rank-color: #7f8a90;
+
+  position: fixed;
+  top: 84px;
+  left: 24px;
+  z-index: 54;
+
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    "label letter"
+    "name letter";
+  column-gap: 9px;
+  align-items: center;
+
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    color 0.2s;
+
+  color: var(--rank-color);
+  pointer-events: none;
+}
+
+body.playing .arcade-rank {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rank-label {
+  grid-area: label;
+  color: #68747a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.arcade-rank strong {
+  grid-area: letter;
+  min-width: 48px;
+  text-align: center;
+  font-size: 38px;
+  line-height: 0.9;
+  font-weight: 950;
+  color: var(--rank-color);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--rank-color) 28%, transparent);
+}
+
+.arcade-rank small {
+  grid-area: name;
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--rank-color) 72%, #777);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  white-space: nowrap;
+}
+
+.rank-d { --rank-color: #7f8a90; }
+.rank-c { --rank-color: #b7ff32; }
+.rank-b { --rank-color: #21e6ff; }
+.rank-a { --rank-color: #8a5cff; }
+.rank-s { --rank-color: #ff2bd6; }
+.rank-ss { --rank-color: #ff9d2e; }
+.rank-sss { --rank-color: #ff4c4c; }
+
+.arcade-rank.rank-up strong {
+  animation: arcadeRankPop 0.4s cubic-bezier(.2,.8,.2,1.4);
+}
+
+@keyframes arcadeRankPop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.45;
+  }
+  55% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.zone-banner {
+  --zone-color: var(--green);
+
+  position: fixed;
+  top: 128px;
+  left: 50%;
+  z-index: 58;
+
+  min-width: min(360px, 74vw);
+  padding: 10px 18px 12px;
+
+  transform: translate(-50%, -12px) scale(0.96);
+  opacity: 0;
+
+  border-top: 1px solid color-mix(in srgb, var(--zone-color) 52%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--zone-color) 38%, transparent);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--zone-color) 7%, #050505),
+      transparent
+    );
+
+  text-align: center;
+  pointer-events: none;
+
+  transition:
+    opacity 0.18s,
+    transform 0.24s;
+}
+
+.zone-banner.visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.zone-banner span {
+  display: block;
+  color: color-mix(in srgb, var(--zone-color) 78%, #aaa);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+
+.zone-banner strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--zone-color);
+  font-size: clamp(20px, 3vw, 34px);
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.025em;
+  text-shadow: 0 0 16px color-mix(in srgb, var(--zone-color) 22%, transparent);
+}
+
+/* A final-half-second panic cue. No gameplay rules change. */
+#game-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 44;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: inset 0 0 90px rgba(255, 40, 40, 0);
+  transition: opacity 0.12s;
+}
+
+body.panic #game-screen::after {
+  opacity: 1;
+  box-shadow:
+    inset 0 0 90px rgba(255, 40, 40, 0.25),
+    inset 0 0 22px rgba(255, 80, 80, 0.16);
+  animation: panicPulse 0.28s ease-in-out infinite alternate;
+}
+
+body.panic #danger-text {
+  color: #ff5b5b;
+  font-weight: 950;
+  text-shadow: 0 0 12px rgba(255,59,59,0.45);
+}
+
+@keyframes panicPulse {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+
+/* =========================================================
+   POST-RUN VERDICT
+========================================================= */
+
+.result-grade strong {
+  min-width: 52px;
+  font-size: clamp(26px, 4vw, 38px);
+}
+
+#final-grade[data-grade="d"] { color: #899398; }
+#final-grade[data-grade="c"] { color: var(--green); }
+#final-grade[data-grade="b"] { color: var(--cyan); }
+#final-grade[data-grade="a"] { color: var(--purple); }
+#final-grade[data-grade="s"] { color: var(--pink); }
+#final-grade[data-grade="ss"] { color: #ff9d2e; }
+#final-grade[data-grade="sss"] {
+  color: #ff5656;
+  text-shadow: 0 0 18px rgba(255,86,86,0.28);
+}
+
+.run-verdict {
+  width: min(560px, 100%);
+  margin-top: 20px;
+  padding: 14px 18px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+
+  background:
+    linear-gradient(90deg, rgba(33,230,255,0.035), rgba(255,43,214,0.035));
+
+  text-align: center;
+}
+
+.run-verdict span {
+  display: block;
+  color: #f2f6f7;
+  font-size: clamp(16px, 3vw, 23px);
+  font-weight: 950;
+  letter-spacing: 0.5px;
+}
+
+.run-verdict small {
+  display: block;
+  margin-top: 5px;
+  color: #7f8c92;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+
+/* Keep the new feedback lightweight in adaptive legacy mode. */
+body.lite-mode .arcade-rank.rank-up strong,
+body.lite-mode.panic #game-screen::after {
+  animation: none !important;
+}
+
+body.lite-mode #game-screen::after {
+  box-shadow: inset 0 0 35px rgba(255,40,40,0.15);
+}
+
+body.lite-mode .zone-banner strong,
+body.lite-mode .arcade-rank strong {
+  text-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .arcade-rank {
+    top: 78px;
+    left: 12px;
+    transform: scale(0.82);
+    transform-origin: left top;
+  }
+
+  body.playing .arcade-rank {
+    transform: scale(0.82);
+  }
+
+  .zone-banner {
+    top: 118px;
+    min-width: min(300px, 72vw);
+  }
+
+  #rush-chain {
+    font-size: 7px;
+    letter-spacing: 1.4px;
+  }
+
+  .run-verdict {
+    padding: 12px 14px;
+  }
+}
