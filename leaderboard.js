@@ -62,15 +62,33 @@
     return body;
   }
 
-  const profilePromise = api("/api/me")
-    .then(data => {
-      if (typeof data.username === "string" && data.username.length) {
-        currentPlayer = data.username;
-      }
-      updateIdentity();
-      return currentPlayer;
-    })
-    .catch(() => null);
+  const profilePromise = new Promise(resolve => {
+    const loadProfile = () => {
+      api("/api/me")
+        .then(data => {
+          if (
+            typeof data.username === "string" &&
+            data.username.length
+          ) {
+            currentPlayer = data.username;
+          }
+
+          updateIdentity();
+          resolve(currentPlayer);
+        })
+        .catch(() => resolve(null));
+    };
+
+    // The leaderboard is irrelevant until game-over, so don't compete
+    // with first paint / landing-page interaction on older hardware.
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadProfile, {
+        timeout: 1800
+      });
+    } else {
+      window.setTimeout(loadProfile, 650);
+    }
+  });
 
   function formatValue(value, category) {
     const number = Number(value);
