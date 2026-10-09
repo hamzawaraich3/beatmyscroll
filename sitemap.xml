@@ -6,7 +6,27 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://beatmyscroll.com/about.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://beatmyscroll.com/contact.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://beatmyscroll.com/privacy.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beatmyscroll.com/terms.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://beatmyscroll.com/disclaimer.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
