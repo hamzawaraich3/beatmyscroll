@@ -1268,7 +1268,7 @@ body.speed-3 .boost-target {
   color: var(--cyan);
   font-size: 9px;
   letter-spacing: 2px;
-  backdrop-filter: blur(10px);
+
   box-shadow: 0 0 18px rgba(33, 230, 255, 0.08);
 }
 
@@ -2613,7 +2613,7 @@ body:not(.landing) #start-screen {
   padding: 16px 0;
   background:
     linear-gradient(to bottom, rgba(5,5,5,0.96), rgba(5,5,5,0.72), transparent);
-  backdrop-filter: blur(8px);
+
 }
 
 .landing-brand {
