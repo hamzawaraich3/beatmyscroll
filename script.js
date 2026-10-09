@@ -1045,6 +1045,9 @@ function updateArcadeRank(speed) {
           : "cyan"
       );
 
+      challengeMessageLockUntil =
+        performance.now() + 720;
+
       slamGameMessage(
         rank.letter + " RANK",
         nextIndex >= 6
@@ -2002,6 +2005,9 @@ function finishBoost(success, now) {
     );
 
     if (rushStreak === 3) {
+      challengeMessageLockUntil =
+        now + 720;
+
       slamGameMessage(
         "RUSH FRENZY",
         "#21e6ff"
@@ -2010,6 +2016,9 @@ function finishBoost(success, now) {
     }
 
     if (rushStreak === 5) {
+      challengeMessageLockUntil =
+        now + 780;
+
       slamGameMessage(
         "RUSH FIEND",
         "#ff2bd6"
@@ -2021,6 +2030,9 @@ function finishBoost(success, now) {
       rushStreak > 5 &&
       rushStreak % 3 === 0
     ) {
+      challengeMessageLockUntil =
+        now + 620;
+
       slamGameMessage(
         "CHAIN ×" + rushStreak,
         "#b7ff32"
