@@ -911,7 +911,6 @@ body.speed-4 #game-screen {
   color: #777;
   font-size: 10px;
   letter-spacing: 2px;
-  backdrop-filter: blur(8px);
 }
 
 .challenge-target span {
@@ -2660,5 +2659,131 @@ body:not(.landing) #start-screen {
   .landing-nav-links {
     justify-content: flex-start;
     gap: 10px 14px;
+  }
+}
+
+
+/* =========================================================
+   PERFORMANCE OPTIMIZATIONS
+========================================================= */
+
+/* Paint off-screen landing content only when it approaches the viewport.
+   Unsupported legacy browsers simply ignore this optimization. */
+.landing-section,
+.landing-final-cta,
+.landing-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
+}
+
+/* The homepage needs a subtle grid, not the enormous perspective canvas
+   used by active gameplay. This cuts a large off-screen raster surface. */
+body.landing .grid {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform: none;
+  background-size: 70px 70px;
+  will-change: auto;
+}
+
+/* Keep GPU isolation local to the actual animated game surfaces. */
+body.playing #speed-lines,
+body.playing .grid {
+  contain: layout paint style;
+}
+
+.speed-line {
+  backface-visibility: hidden;
+}
+
+/* Automatic legacy / low-end mode.
+   Scoring, timing, stages and thresholds are unchanged; only decoration
+   becomes cheaper to render. */
+body.lite-mode .speed-line:nth-child(n + 11) {
+  display: none;
+}
+
+body.lite-mode .speed-line {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+body.lite-mode #speed-lines {
+  --speed-blur: 0px !important;
+  --speed-glow: 0px !important;
+  filter: none !important;
+}
+
+body.lite-mode .moment-card img {
+  filter: none !important;
+}
+
+body.lite-mode #hyperspace {
+  filter: none !important;
+}
+
+body.lite-mode.hyperspace #hyperspace {
+  animation-duration: 0.22s !important;
+  opacity: 0.72;
+}
+
+body.lite-mode.hyperspace #game-screen::before {
+  animation: none !important;
+  opacity: 0.28;
+}
+
+body.lite-mode.stage-aura #scroll-world {
+  animation: none !important;
+  filter: none !important;
+}
+
+body.lite-mode.stage-aura #rgb-wash {
+  animation: none !important;
+  mix-blend-mode: normal;
+  opacity: 0.10;
+}
+
+body.lite-mode.stage-aura .speed-line,
+body.lite-mode.stage-aura #score,
+body.lite-mode.stage-aura #speed-display,
+body.lite-mode.stage-aura #combo-display {
+  animation-duration: 1.8s !important;
+}
+
+body.lite-mode .number-pop,
+body.lite-mode .slam-text,
+body.lite-mode .crumble-text {
+  animation: none !important;
+}
+
+body.lite-mode .sound-toggle,
+body.lite-mode .landing-nav {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Reduce huge fixed-layer repaint cost on older mobile browsers. */
+@media (max-width: 720px) {
+  body.landing #scroll-world {
+    background:
+      radial-gradient(circle at 50% 30%, rgba(33,230,255,0.055), transparent 34%),
+      #050505;
+  }
+
+  body.landing .grid {
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speed-line,
+  #hyperspace,
+  #rgb-wash,
+  #game-screen::before,
+  #scroll-world {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
