@@ -345,14 +345,14 @@ const AUDIO_VOLUME = {
   fahh: 0.80
 };
 
-let audioBank = null;
-let audioBankPromise = null;
 let audioUnlocked = false;
+let audioUnlockInFlight = false;
 
 let currentMusicKey = null;
 let desiredMusicKey = null;
 let musicRequestId = 0;
 let sonicDropStartedAt = 0;
+let musicRetryTimer = null;
 
 const musicFades = new Map();
 const playingEffects = new Set();
@@ -360,56 +360,69 @@ const playingEffects = new Set();
 let soundEnabled =
   localStorage.getItem("beatMyScrollSound") !== "off";
 
-function findAudioSources() {
-  return Promise.resolve(HQ_AUDIO);
+function createAudioBank() {
+  const bank = {};
+
+  for (const key of Object.keys(HQ_AUDIO)) {
+    const element = new Audio();
+
+    // Create every media element synchronously at page load so the first
+    // genuine user gesture can unlock it reliably. Large files still do not
+    // download until needed.
+    element.preload =
+      key === "click"
+        ? "auto"
+        : "none";
+
+    element.src = HQ_AUDIO[key];
+    element.volume = AUDIO_VOLUME[key];
+    element.loop =
+      ["sonic", "alquimia", "aura"].includes(key);
+
+    bank[key] = element;
+  }
+
+  return bank;
 }
 
+// Important: synchronous construction removes the old race where the first
+// click happened before the audio elements existed.
+const audioBank = createAudioBank();
+
 function ensureAudioBank() {
-  if (audioBank) return Promise.resolve(audioBank);
-  if (audioBankPromise) return audioBankPromise;
+  return Promise.resolve(audioBank);
+}
 
-  audioBankPromise = findAudioSources()
-    .then(function(sources) {
-      const required = [
-        "click", "sonic", "goku",
-        "alquimia", "aura", "fahh"
-      ];
+function warmAudioForRun() {
+  // Sonic is the first long track players normally reach. Start fetching it
+  // once PLAY has been pressed, not on landing-page load.
+  const sonic = audioBank.sonic;
 
-      const missing = required.filter(key => !sources[key]);
-      if (missing.length) {
-        throw new Error("Missing audio sources: " + missing.join(", "));
-      }
+  if (
+    sonic &&
+    sonic.preload !== "auto"
+  ) {
+    sonic.preload = "auto";
 
-      const bank = {};
+    try {
+      sonic.load();
+    } catch (error) {}
+  }
 
-      for (const key of required) {
-        const element = new Audio();
+  // Small one-shot effects are cheap enough to prepare after PLAY.
+  ["goku", "fahh"].forEach(function(key) {
+    const track = audioBank[key];
 
-        // Critical for low-end devices: do not download/decode multi-MB
-        // tracks until the game actually asks to play them.
-        element.preload =
-          key === "click"
-            ? "auto"
-            : "none";
+    if (!track || track.preload === "auto") {
+      return;
+    }
 
-        element.src = sources[key];
-        element.volume = AUDIO_VOLUME[key];
-        element.loop =
-          ["sonic", "alquimia", "aura"].includes(key);
+    track.preload = "auto";
 
-        bank[key] = element;
-      }
-
-      audioBank = bank;
-      return bank;
-    })
-    .catch(function(error) {
-      console.warn("Audio initialization failed:", error);
-      audioBankPromise = null;
-      return null;
-    });
-
-  return audioBankPromise;
+    try {
+      track.load();
+    } catch (error) {}
+  });
 }
 
 function updateSoundButton() {
@@ -421,40 +434,70 @@ function updateSoundButton() {
 }
 
 function unlockAudio() {
-  if (!soundEnabled || audioUnlocked) return;
-
-  if (!audioBank) {
-    void ensureAudioBank();
+  if (
+    !soundEnabled ||
+    audioUnlocked ||
+    audioUnlockInFlight
+  ) {
     return;
   }
 
-  // Must start play() synchronously within a real gesture, especially
-  // on iOS Safari. An await before play can lose the gesture allowance.
+  audioUnlockInFlight = true;
+
+  // This call happens synchronously inside pointer/touch/key/click gestures.
   const click = audioBank.click;
   const normalVolume = click.volume;
+  const normalMuted = click.muted;
+
+  click.muted = true;
   click.volume = 0;
 
+  const finishUnlock = function() {
+    click.pause();
+
+    try {
+      click.currentTime = 0;
+    } catch (error) {}
+
+    click.muted = normalMuted;
+    click.volume = normalVolume;
+
+    audioUnlockInFlight = false;
+    audioUnlocked = true;
+
+    updateSoundButton();
+
+    if (state === "playing") {
+      syncStageMedia();
+    }
+  };
+
+  const failUnlock = function() {
+    click.muted = normalMuted;
+    click.volume = normalVolume;
+
+    audioUnlockInFlight = false;
+    audioUnlocked = false;
+
+    updateSoundButton();
+  };
+
   try {
-    const p = click.play();
+    const playing = click.play();
 
-    if (p && typeof p.then === "function") {
-      p.then(function() {
-        click.pause();
-        try { click.currentTime = 0; } catch (error) {}
-        click.volume = normalVolume;
-        audioUnlocked = true;
-        updateSoundButton();
-
-        if (state === "playing") {
-          syncStageMedia();
-        }
-      }).catch(function() {
-        click.volume = normalVolume;
-        updateSoundButton();
-      });
+    // Older browsers sometimes return undefined instead of a Promise.
+    if (
+      playing &&
+      typeof playing.then === "function"
+    ) {
+      playing
+        .then(finishUnlock)
+        .catch(failUnlock);
+    } else {
+      finishUnlock();
     }
   } catch (error) {
-    click.volume = normalVolume;
+    failUnlock();
   }
 }
 
@@ -493,7 +536,36 @@ function fadeTrack(track, destination, duration, pauseWhenDone) {
   musicFades.set(track, requestAnimationFrame(tick));
 }
 
+function clearMusicRetry() {
+  if (musicRetryTimer) {
+    clearTimeout(musicRetryTimer);
+    musicRetryTimer = null;
+  }
+}
+
+function scheduleMusicRetry(key, requestId, delay) {
+  clearMusicRetry();
+
+  musicRetryTimer = setTimeout(function() {
+    musicRetryTimer = null;
+
+    if (
+      !soundEnabled ||
+      state !== "playing" ||
+      desiredMusicKey !== key ||
+      requestId !== musicRequestId
+    ) {
+      return;
+    }
+
+    // Force a fresh attempt even if the stage itself never changed.
+    desiredMusicKey = null;
+    playMusic(key);
+  }, delay || 500);
+}
+
 function stopMusic() {
+  clearMusicRetry();
   desiredMusicKey = null;
   musicRequestId += 1;
   currentMusicKey = null;
@@ -510,67 +582,115 @@ function stopMusic() {
 
 function playMusic(key) {
   if (!soundEnabled) return;
-  if (desiredMusicKey === key) return;
+
+  if (
+    desiredMusicKey === key &&
+    currentMusicKey === key &&
+    audioBank[key] &&
+    !audioBank[key].paused
+  ) {
+    return;
+  }
+
+  clearMusicRetry();
 
   desiredMusicKey = key;
   const requestId = ++musicRequestId;
+  const incoming = audioBank[key];
 
-  void ensureAudioBank().then(function(bank) {
+  if (!incoming) return;
+
+  const outgoing =
+    currentMusicKey
+      ? audioBank[currentMusicKey]
+      : null;
+
+  cancelFade(incoming);
+
+  // Ask the browser for the file now. This keeps landing-page load light but
+  // avoids waiting until the exact millisecond the stage transition happens.
+  if (incoming.preload !== "auto") {
+    incoming.preload = "auto";
+
+    try {
+      incoming.load();
+    } catch (error) {}
+  }
+
+  incoming.volume = 0;
+
+  if (incoming.paused) {
+    try {
+      incoming.currentTime = 0;
+    } catch (error) {}
+  }
+
+  const onStarted = function() {
     if (
-      !bank ||
-      !soundEnabled ||
       requestId !== musicRequestId ||
       desiredMusicKey !== key ||
       state !== "playing"
     ) {
+      incoming.pause();
       return;
     }
 
-    const incoming = bank[key];
-    if (!incoming) return;
+    currentMusicKey = key;
+    audioUnlocked = true;
+    updateSoundButton();
 
+    fadeTrack(
+      incoming,
+      AUDIO_VOLUME[key],
+      440,
+      false
+    );
+
+    if (outgoing && outgoing !== incoming) {
+      fadeTrack(outgoing, 0, 350, true);
+    }
+  };
+
+  const onFailed = function(error) {
     if (
-      currentMusicKey === key &&
-      !incoming.paused
+      requestId !== musicRequestId ||
+      desiredMusicKey !== key
     ) {
       return;
     }
 
-    const outgoing = currentMusicKey
-      ? bank[currentMusicKey]
-      : null;
+    currentMusicKey = null;
 
-    currentMusicKey = key;
-
-    cancelFade(incoming);
-    incoming.volume = 0;
-
-    // Never restart the same playing track on a small change in speed.
-    // Fresh stages begin at 0 once, then run continuously.
-    if (incoming.paused) {
-      try { incoming.currentTime = 0; } catch (error) {}
+    // NotAllowedError means the browser wants another user gesture.
+    // Network/ready-state failures are retried automatically.
+    if (
+      error &&
+      error.name === "NotAllowedError"
+    ) {
+      audioUnlocked = false;
+      updateSoundButton();
+      return;
     }
 
-    try {
-      const playing = incoming.play();
-      if (playing && typeof playing.catch === "function") {
-        playing.catch(function() {
-          if (requestId === musicRequestId) {
-            currentMusicKey = null;
-            desiredMusicKey = null;
-            updateSoundButton();
-          }
-        });
-      }
-      fadeTrack(incoming, AUDIO_VOLUME[key], 520, false);
-    } catch (error) {
-      console.warn("Could not start music:", error);
-    }
+    scheduleMusicRetry(key, requestId, 450);
+  };
 
-    if (outgoing && outgoing !== incoming) {
-      fadeTrack(outgoing, 0, 420, true);
+  try {
+    const playing = incoming.play();
+
+    if (
+      playing &&
+      typeof playing.then === "function"
+    ) {
+      playing
+        .then(onStarted)
+        .catch(onFailed);
+    } else {
+      onStarted();
     }
-  });
+  } catch (error) {
+    onFailed(error);
+  }
 }
 
 function playSfx(key, playbackRate) {
@@ -626,6 +746,7 @@ function playSfx(key, playbackRate) {
 }
 
 function stopAllAudio() {
+  clearMusicRetry();
   desiredMusicKey = null;
   currentMusicKey = null;
   musicRequestId += 1;
@@ -664,12 +785,9 @@ soundToggle.addEventListener("click", function() {
   updateSoundButton();
 });
 
-["pointerdown", "touchstart", "keydown"].forEach(function(name) {
+["pointerdown", "touchstart", "keydown", "wheel"].forEach(function(name) {
   window.addEventListener(name, unlockAudio, { passive: true });
 });
-
-// Load / inspect sources early, without auto-playing anything.
-void ensureAudioBank();
 
 momentImage.addEventListener(
   "error",
@@ -1558,6 +1676,7 @@ function startGame() {
   );
 
   unlockAudio();
+  warmAudioForRun();
 
   gameMessage.textContent = "GO.";
   gameMessage.style.color = "";
@@ -2329,8 +2448,17 @@ function resetGame() {
 [startButton, startButtonBottom].forEach(function(button) {
   if (!button) return;
 
+  // pointerdown happens earlier than click and gives mobile Safari the most
+  // reliable opportunity to grant media playback.
+  button.addEventListener(
+    "pointerdown",
+    unlockAudio,
+    { passive: true }
+  );
+
   button.addEventListener("click", function() {
     unlockAudio();
+    warmAudioForRun();
     playSfx("click");
     startGame();
   });
@@ -2342,9 +2470,16 @@ function resetGame() {
 ========================================================= */
 
 retryButton.addEventListener(
+  "pointerdown",
+  unlockAudio,
+  { passive: true }
+);
+
+retryButton.addEventListener(
   "click",
   function() {
     unlockAudio();
+    warmAudioForRun();
     playSfx("click");
     resetGame();
   }
