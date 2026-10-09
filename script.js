@@ -133,6 +133,12 @@ let slowFrameCount = 0;
 let lastVisualPaint = 0;
 let lastHudPaint = 0;
 let visualLineLimit = liteMode ? 10 : 24;
+let lastSpeedBand = -1;
+let dangerCritical = false;
+let lastBoostPaint = 0;
+
+const scoreFormatter =
+  new Intl.NumberFormat();
 
 function enableLiteMode() {
   if (liteMode || qualityOverride === "full") return;
@@ -682,7 +688,7 @@ let personalBest =
   Number(localStorage.getItem("beatMyScrollBest")) || 0;
 
 bestScoreDisplay.textContent =
-  personalBest.toLocaleString();
+  scoreFormatter.format(personalBest);
 
 if (challengeScore > 0) {
   challengeBox.classList.remove("hidden");
@@ -1260,10 +1266,10 @@ function updateHUD(force) {
   const roundedScore = Math.floor(score);
 
   scoreDisplay.textContent =
-    roundedScore.toLocaleString();
+    scoreFormatter.format(roundedScore);
 
   distanceMarker.textContent =
-    roundedScore.toLocaleString();
+    scoreFormatter.format(roundedScore);
 
   const scorePopBucket =
     Math.floor(roundedScore / 100);
@@ -1334,6 +1340,7 @@ function spawnBoost(now) {
   boostActive = true;
   boostProgress = 0;
   lastBoostProgressAt = 0;
+  lastBoostPaint = 0;
   currentBoostTier = pickBoostTier();
   boostStartedAt = now;
   boostDeadline =
@@ -1415,6 +1422,18 @@ function finishBoost(success, now) {
 
 function updateBoost(now) {
   if (!boostActive) return;
+
+  if (
+    liteMode &&
+    now - lastBoostPaint < 33
+  ) {
+    if (now >= boostDeadline) {
+      finishBoost(false, now);
+    }
+    return;
+  }
+
+  lastBoostPaint = now;
 
   const timeRatio =
     clamp(
@@ -1506,6 +1525,9 @@ function startGame() {
   lastVisualPaint = 0;
   lastHudPaint = 0;
   slowFrameCount = 0;
+  lastSpeedBand = -1;
+  dangerCritical = false;
+  lastBoostPaint = 0;
 
   startTime = now;
   lastInputTime = now;
@@ -1673,6 +1695,7 @@ window.addEventListener(
 window.addEventListener(
   "touchstart",
   function(event) {
+    if (state !== "playing") return;
     if (!event.touches.length) return;
 
     previousTouchY =
@@ -1827,6 +1850,12 @@ function gameLoop(now) {
     const idleTime =
       now - lastInputTime;
 
+    const visualInterval =
+      liteMode ? 33 : 16;
+
+    const shouldPaintVisual =
+      now - lastVisualPaint >= visualInterval;
+
     if (
       now - lastHudPaint >=
       (liteMode ? 90 : 45)
@@ -1842,15 +1871,20 @@ function gameLoop(now) {
         idleTime / INACTIVITY_LIMIT
       );
 
-    dangerFill.style.transform =
-      "scaleX(" + remaining + ")";
+    if (shouldPaintVisual) {
+      dangerFill.style.transform =
+        "scaleX(" + remaining.toFixed(3) + ")";
 
-    if (remaining < 0.35) {
-      dangerFill.style.background =
-        "#ff3b3b";
-    } else {
-      dangerFill.style.background =
-        "#b7ff32";
+      const isCritical =
+        remaining < 0.35;
+
+      if (isCritical !== dangerCritical) {
+        dangerCritical = isCritical;
+        dangerFill.style.background =
+          isCritical
+            ? "#ff3b3b"
+            : "#b7ff32";
+      }
     }
 
     if (idleTime >= INACTIVITY_LIMIT) {
@@ -1909,10 +1943,7 @@ function gameLoop(now) {
       velocity *
       (frameDelta / 16.67);
 
-    const visualInterval =
-      liteMode ? 33 : 16;
-
-    if (now - lastVisualPaint >= visualInterval) {
+    if (shouldPaintVisual) {
       lastVisualPaint = now;
 
       const gridMovement =
@@ -2000,42 +2031,59 @@ function gameLoop(now) {
       }
     }
 
-    body.classList.remove(
-      "speed-2",
-      "speed-3",
-      "speed-4"
-    );
+    if (shouldPaintVisual) {
+      const speedBand =
+        currentSpeed >= 40
+          ? 3
+          : currentSpeed >= 24
+            ? 2
+            : currentSpeed >= 10
+              ? 1
+              : 0;
 
-    if (currentSpeed >= 10) {
-      body.classList.add("speed-2");
+      if (speedBand !== lastSpeedBand) {
+        lastSpeedBand = speedBand;
+
+        body.classList.remove(
+          "speed-2",
+          "speed-3",
+          "speed-4"
+        );
+
+        if (speedBand >= 1) {
+          body.classList.add("speed-2");
+        }
+
+        if (speedBand >= 2) {
+          body.classList.add("speed-3");
+        }
+
+        if (speedBand >= 3) {
+          body.classList.add("speed-4");
+        }
+      }
+
+      const hyperspace =
+        powerStage === "aura" ||
+        scrollRate >= HYPERSPACE_RATE;
+
+      if (hyperspace !== wasHyperspace) {
+        body.classList.toggle(
+          "hyperspace",
+          hyperspace
+        );
+
+        if (hyperspace) {
+          triggerImpact(
+            powerStage === "aura"
+              ? "green"
+              : "cyan"
+          );
+        }
+
+        wasHyperspace = hyperspace;
+      }
     }
-
-    if (currentSpeed >= 24) {
-      body.classList.add("speed-3");
-    }
-
-    if (currentSpeed >= 40) {
-      body.classList.add("speed-4");
-    }
-
-    const hyperspace =
-      powerStage === "aura" ||
-      scrollRate >= HYPERSPACE_RATE;
-
-    body.classList.toggle(
-      "hyperspace",
-      hyperspace
-    );
-
-    if (hyperspace && !wasHyperspace) {
-      triggerImpact(
-        powerStage === "aura"
-          ? "green"
-          : "cyan"
-      );
-    }
-
-    wasHyperspace = hyperspace;
 
     updateHUD();
   }
@@ -2077,7 +2125,7 @@ function endGame(now) {
   }
 
   finalScoreDisplay.textContent =
-    roundedScore.toLocaleString();
+    scoreFormatter.format(roundedScore);
 
   finalTimeDisplay.textContent =
     (finalElapsed / 1000).toFixed(1) + "s";
@@ -2102,10 +2150,10 @@ function endGame(now) {
     formatCombo(maxCombo);
 
   finalBestDisplay.textContent =
-    personalBest.toLocaleString();
+    scoreFormatter.format(personalBest);
 
   bestScoreDisplay.textContent =
-    personalBest.toLocaleString();
+    scoreFormatter.format(personalBest);
 
   if (newRecord) {
     newBestDisplay.classList.add("visible");
@@ -2203,6 +2251,9 @@ function resetGame() {
   lastVisualPaint = 0;
   lastHudPaint = 0;
   slowFrameCount = 0;
+  lastSpeedBand = -1;
+  dangerCritical = false;
+  lastBoostPaint = 0;
 
   stopAllAudio();
   hideMoment();
@@ -2317,7 +2368,7 @@ shareButton.addEventListener(
 
     const shareText =
       "I scored " +
-      roundedScore.toLocaleString() +
+      scoreFormatter.format(roundedScore) +
       " on BeatMyScroll and lasted " +
       seconds +
       " seconds with a max speed of " +
