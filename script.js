@@ -185,6 +185,10 @@ const rankNameDisplay = document.getElementById("rank-name");
 const zoneBanner = document.getElementById("zone-banner");
 const zoneNumberDisplay = document.getElementById("zone-number");
 const zoneNameDisplay = document.getElementById("zone-name");
+const zoneSweep = document.getElementById("zone-sweep");
+const pbGhost = document.getElementById("pb-ghost");
+const pbGhostDelta = document.getElementById("pb-ghost-delta");
+const pbGhostStatus = document.getElementById("pb-ghost-status");
 const bestScoreDisplay = document.getElementById("best-score");
 
 const finalScoreDisplay = document.getElementById("final-score");
@@ -291,6 +295,11 @@ let maxRushStreak = 0;
 let panicLatched = false;
 let clutchCount = 0;
 let zoneBannerTimer = null;
+
+let pbGhostTimeline = [];
+let currentRunTimeline = [];
+let lastGhostSampleAt = 0;
+let lastGhostDisplayDelta = null;
 
 const urlParams = new URLSearchParams(window.location.search);
 const parsedChallengeScore = Number(urlParams.get("score"));
@@ -867,6 +876,27 @@ updateSoundButton();
 let personalBest =
   Number(localStorage.getItem("beatMyScrollBest")) || 0;
 
+try {
+  const savedGhost =
+    JSON.parse(
+      localStorage.getItem("beatMyScrollBestGhost") || "[]"
+    );
+
+  if (Array.isArray(savedGhost)) {
+    pbGhostTimeline =
+      savedGhost.filter(function(point) {
+        return (
+          Array.isArray(point) &&
+          point.length === 2 &&
+          Number.isFinite(point[0]) &&
+          Number.isFinite(point[1])
+        );
+      });
+  }
+} catch (error) {
+  pbGhostTimeline = [];
+}
+
 bestScoreDisplay.textContent =
   scoreFormatter.format(personalBest);
 
@@ -1037,6 +1067,9 @@ function showZone(index) {
 
   if (index > 0) {
     haptic([12, 35, 18]);
+
+    triggerZoneSweep(zone.color);
+
     triggerImpact(
       index >= 4
         ? "pink"
@@ -1140,6 +1173,143 @@ function getRunVerdict(averageSpeed, seconds) {
     title: "CERTIFIED SCROLLER",
     summary: "Warm up, hit the RUSH targets, and run it back."
   };
+}
+
+function getGhostScoreAt(elapsed) {
+  if (!pbGhostTimeline.length) {
+    return null;
+  }
+
+  const targetTime =
+    Math.max(0, elapsed);
+
+  let low = 0;
+  let high = pbGhostTimeline.length - 1;
+  let bestIndex = 0;
+
+  while (low <= high) {
+    const middle =
+      Math.floor((low + high) / 2);
+
+    if (pbGhostTimeline[middle][0] <= targetTime) {
+      bestIndex = middle;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return pbGhostTimeline[bestIndex][1];
+}
+
+function updateGhostPace(elapsed, roundedScore) {
+  if (!pbGhostTimeline.length) {
+    pbGhost.classList.remove("ahead", "behind");
+    pbGhostDelta.textContent = "--";
+    pbGhostStatus.textContent = "SET A PERSONAL BEST";
+    return;
+  }
+
+  const ghostScore =
+    getGhostScoreAt(elapsed);
+
+  if (!Number.isFinite(ghostScore)) {
+    return;
+  }
+
+  const delta =
+    roundedScore - ghostScore;
+
+  const roundedDelta =
+    Math.round(delta);
+
+  pbGhost.classList.toggle(
+    "ahead",
+    roundedDelta >= 0
+  );
+
+  pbGhost.classList.toggle(
+    "behind",
+    roundedDelta < 0
+  );
+
+  pbGhostDelta.textContent =
+    (roundedDelta >= 0 ? "+" : "") +
+    scoreFormatter.format(roundedDelta);
+
+  pbGhostStatus.textContent =
+    roundedDelta >= 0
+      ? "AHEAD OF YOUR PB"
+      : "CHASING YOUR PB";
+
+  if (
+    lastGhostDisplayDelta !== null &&
+    lastGhostDisplayDelta < 0 &&
+    roundedDelta >= 0
+  ) {
+    showBoostToast("PB OVERTAKE", false);
+    haptic([8, 20, 12]);
+  }
+
+  lastGhostDisplayDelta = roundedDelta;
+}
+
+function sampleRunGhost(now) {
+  if (state !== "playing") {
+    return;
+  }
+
+  if (
+    now - lastGhostSampleAt < 500 &&
+    currentRunTimeline.length
+  ) {
+    return;
+  }
+
+  lastGhostSampleAt = now;
+
+  currentRunTimeline.push([
+    Math.max(0, Math.round(now - startTime)),
+    Math.max(0, Math.floor(score))
+  ]);
+}
+
+function saveBestGhost(finalElapsed, finalScore) {
+  currentRunTimeline.push([
+    Math.max(0, Math.round(finalElapsed)),
+    Math.max(0, Math.floor(finalScore))
+  ]);
+
+  pbGhostTimeline =
+    currentRunTimeline.slice(-1200);
+
+  try {
+    localStorage.setItem(
+      "beatMyScrollBestGhost",
+      JSON.stringify(pbGhostTimeline)
+    );
+  } catch (error) {
+    // Local storage may be unavailable or full; gameplay still works.
+  }
+}
+
+function triggerZoneSweep(color) {
+  if (liteMode) {
+    return;
+  }
+
+  zoneSweep.style.setProperty(
+    "--zone-sweep-color",
+    color
+  );
+
+  zoneSweep.classList.remove("active");
+  void zoneSweep.offsetWidth;
+  zoneSweep.classList.add("active");
+
+  setTimeout(function() {
+    zoneSweep.classList.remove("active");
+  }, 760);
 }
 
 function pickBoostTier() {
@@ -1688,6 +1858,13 @@ function updateHUD(force) {
   updateArcadeRank(currentSpeed);
   updateZone(roundedScore);
 
+  if (state === "playing") {
+    updateGhostPace(
+      now - startTime,
+      roundedScore
+    );
+  }
+
   if (
     challengeScore > 0 &&
     !challengeBeaten &&
@@ -1929,6 +2106,10 @@ function startGame() {
   panicLatched = false;
   clutchCount = 0;
 
+  currentRunTimeline = [];
+  lastGhostSampleAt = 0;
+  lastGhostDisplayDelta = null;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -1975,6 +2156,15 @@ function startGame() {
   rankNameDisplay.textContent = "WARMING UP";
   rushChainDisplay.textContent = "RUSH CHAIN 0";
   zoneBanner.classList.remove("visible");
+  zoneSweep.classList.remove("active");
+
+  pbGhost.classList.remove("ahead", "behind");
+  pbGhostDelta.textContent =
+    pbGhostTimeline.length ? "0" : "--";
+  pbGhostStatus.textContent =
+    pbGhostTimeline.length
+      ? "RACE YOUR PERSONAL BEST"
+      : "SET A PERSONAL BEST";
 
   updateHUD(true);
 }
@@ -2262,6 +2452,8 @@ function gameLoop(now) {
     }
     const elapsed =
       now - startTime;
+
+    sampleRunGhost(now);
 
     const idleTime =
       now - lastInputTime;
@@ -2569,6 +2761,10 @@ function endGame(now) {
     );
 
     newRecord = true;
+    saveBestGhost(
+      finalElapsed,
+      roundedScore
+    );
   }
 
   finalScoreDisplay.textContent =
@@ -2731,6 +2927,10 @@ function resetGame() {
   panicLatched = false;
   clutchCount = 0;
 
+  currentRunTimeline = [];
+  lastGhostSampleAt = 0;
+  lastGhostDisplayDelta = null;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -2757,6 +2957,16 @@ function resetGame() {
   rankLetterDisplay.textContent = "D";
   rankNameDisplay.textContent = "WARMING UP";
   zoneBanner.classList.remove("visible");
+  zoneSweep.classList.remove("active");
+
+  pbGhost.classList.remove("ahead", "behind");
+  pbGhostDelta.textContent =
+    pbGhostTimeline.length ? "0" : "--";
+  pbGhostStatus.textContent =
+    pbGhostTimeline.length
+      ? "RACE YOUR PERSONAL BEST"
+      : "SET A PERSONAL BEST";
+
   distanceMarker.textContent = "0";
 
   dangerFill.style.transform =
