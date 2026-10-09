@@ -269,7 +269,43 @@ export default {
     const pathname = new URL(request.url).pathname;
 
     if (!pathname.startsWith("/api/")) {
-      return env.ASSETS.fetch(request);
+      const response = await env.ASSETS.fetch(request);
+
+      if (
+        request.method !== "GET" ||
+        !response.ok
+      ) {
+        return response;
+      }
+
+      const headers =
+        new Headers(response.headers);
+
+      if (/\.(mp3|gif|webp|png|jpg|jpeg)$/i.test(pathname)) {
+        headers.set(
+          "Cache-Control",
+          "public, max-age=86400, stale-while-revalidate=604800"
+        );
+      } else if (/\.(css|js)$/i.test(pathname)) {
+        headers.set(
+          "Cache-Control",
+          "public, max-age=3600, stale-while-revalidate=86400"
+        );
+      } else if (/\.(txt|xml)$/i.test(pathname)) {
+        headers.set(
+          "Cache-Control",
+          "public, max-age=3600"
+        );
+      }
+
+      return new Response(
+        response.body,
+        {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        }
+      );
     }
 
     if (!env.LEADERBOARD) {
