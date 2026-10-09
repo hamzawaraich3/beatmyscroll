@@ -448,6 +448,11 @@
   <!-- GAME AREA -->
   <main id="game-screen" class="screen">
 
+    <div id="depth-tunnel" class="depth-tunnel" aria-hidden="true">
+      <div id="depth-stage" class="depth-stage"></div>
+      <div class="depth-vanishing-point"></div>
+    </div>
+
     <div id="speed-lines"></div>
 
     <div id="game-message">
@@ -462,15 +467,25 @@
       TARGET <span id="challenge-target-score">0</span>
     </div>
 
-    <div id="boost-target" class="boost-target hidden" aria-hidden="true">
-      <div id="boost-approach" class="boost-approach"></div>
-      <div id="boost-core" class="boost-core">
+    <div id="boost-target" class="boost-target rush-gate hidden" aria-hidden="true">
+      <div id="boost-approach" class="boost-approach rush-gate-frame"></div>
+
+      <div id="boost-core" class="boost-core rush-gate-panel">
+        <div class="rush-gate-header">RUSH GATE</div>
+
         <div class="boost-copy">
-          <span>RUSH ↓</span>
+          <span>SWIPE / SCROLL ↓</span>
           <em id="boost-reward">×1.2</em>
           <strong id="boost-progress">0%</strong>
         </div>
+
+        <div class="rush-gate-meter" aria-hidden="true">
+          <div class="rush-gate-meter-fill"></div>
+        </div>
       </div>
+
+      <span class="rush-gate-depth depth-a"></span>
+      <span class="rush-gate-depth depth-b"></span>
     </div>
 
     <div id="boost-toast" class="boost-toast" aria-live="polite"></div>
