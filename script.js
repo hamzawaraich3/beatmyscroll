@@ -213,6 +213,8 @@ const newBestDisplay = document.getElementById("new-best");
 
 const grid = document.querySelector(".grid");
 const speedLinesContainer = document.getElementById("speed-lines");
+const depthTunnel = document.getElementById("depth-tunnel");
+const depthStage = document.getElementById("depth-stage");
 
 const challengeBox = document.getElementById("challenge-box");
 const challengeScoreDisplay = document.getElementById("challenge-score");
@@ -951,6 +953,118 @@ for (let i = 0; i < 24; i++) {
 
   speedLinesContainer.appendChild(line);
   speedLines.push(line);
+}
+
+
+/* =========================================================
+   LIGHTWEIGHT CSS-3D DEPTH TUNNEL
+========================================================= */
+
+const depthFrames = [];
+const DEPTH_FRAME_COUNT = 10;
+const DEPTH_SPAN = 1650;
+
+for (let i = 0; i < DEPTH_FRAME_COUNT; i++) {
+  const frame = document.createElement("div");
+
+  frame.className = "depth-frame";
+  frame.dataset.index = String(i);
+
+  const notchTop = document.createElement("span");
+  const notchBottom = document.createElement("span");
+
+  notchTop.className = "depth-notch depth-notch-top";
+  notchBottom.className = "depth-notch depth-notch-bottom";
+
+  frame.appendChild(notchTop);
+  frame.appendChild(notchBottom);
+
+  depthStage.appendChild(frame);
+  depthFrames.push(frame);
+}
+
+function updateDepthTunnel(speedIntensity) {
+  if (!depthTunnel || !depthFrames.length) {
+    return;
+  }
+
+  const visibility =
+    clamp(
+      (currentSpeed - 2) / 24,
+      0,
+      1
+    );
+
+  depthTunnel.style.opacity =
+    (visibility * (liteMode ? 0.34 : 0.72)).toFixed(3);
+
+  const travel =
+    (
+      visualDistance *
+      (0.20 + speedIntensity * 0.34)
+    ) %
+    DEPTH_SPAN;
+
+  const frameLimit =
+    liteMode
+      ? Math.min(5, depthFrames.length)
+      : depthFrames.length;
+
+  const roll =
+    Math.sin(visualDistance / 820) *
+    (0.8 + speedIntensity * 2.8);
+
+  depthStage.style.transform =
+    "rotateZ(" + roll.toFixed(2) + "deg)";
+
+  for (let i = 0; i < depthFrames.length; i++) {
+    const frame = depthFrames[i];
+
+    if (i >= frameLimit) {
+      frame.style.display = "none";
+      continue;
+    }
+
+    if (frame.style.display === "none") {
+      frame.style.display = "";
+    }
+
+    const phase =
+      (i / frameLimit) * DEPTH_SPAN;
+
+    const wrapped =
+      (phase + travel) % DEPTH_SPAN;
+
+    const z =
+      -DEPTH_SPAN + wrapped;
+
+    const depthRatio =
+      clamp(
+        (z + DEPTH_SPAN) / DEPTH_SPAN,
+        0,
+        1
+      );
+
+    const twist =
+      Math.sin(
+        visualDistance / 560 + i * 0.82
+      ) *
+      (0.6 + speedIntensity * 2.2);
+
+    frame.style.transform =
+      "translate3d(-50%, -50%, " +
+      z.toFixed(1) +
+      "px) rotateZ(" +
+      twist.toFixed(2) +
+      "deg)";
+
+    frame.style.opacity =
+      (
+        0.035 +
+        depthRatio *
+        (0.12 + speedIntensity * 0.42)
+      ).toFixed(3);
+  }
 }
 
 
@@ -1930,8 +2044,17 @@ function spawnBoost(now) {
   boostDeadline =
     now + currentBoostTier.window;
 
-  const left = 22 + Math.random() * 56;
-  const top = 34 + Math.random() * 34;
+  const left =
+    50 + (Math.random() - 0.5) * 26;
+
+  const top =
+    55 + (Math.random() - 0.5) * 16;
+
+  const gateYaw =
+    (left - 50) * -0.75;
+
+  const gatePitch =
+    (top - 55) * 0.34;
 
   boostTarget.style.left = left + "%";
   boostTarget.style.top = top + "%";
@@ -1941,14 +2064,37 @@ function spawnBoost(now) {
     currentBoostTier.color
   );
 
+  boostTarget.style.setProperty(
+    "--gate-yaw",
+    gateYaw.toFixed(1) + "deg"
+  );
+
+  boostTarget.style.setProperty(
+    "--gate-pitch",
+    gatePitch.toFixed(1) + "deg"
+  );
+
+  boostTarget.style.setProperty(
+    "--gate-scale",
+    "0.78"
+  );
+
+  boostTarget.style.setProperty(
+    "--rush-progress",
+    "0%"
+  );
+
   boostCore.style.setProperty("--boost-fill", "0deg");
+  boostCore.style.setProperty("--rush-progress", "0%");
   boostRewardDisplay.textContent =
     formatCombo(currentBoostTier.multiplier);
 
   boostProgressDisplay.textContent = "0%";
 
-  boostApproach.style.transform = "scale(1.8)";
-  boostApproach.style.opacity = "0.38";
+  boostApproach.style.transform =
+    "translateZ(-42px) scale(1.22)";
+
+  boostApproach.style.opacity = "0.26";
 
   boostTarget.classList.remove("hidden");
 }
@@ -2083,17 +2229,42 @@ function updateBoost(now) {
     );
 
   const approachScale =
-    1.8 - timeRatio * 0.8;
+    1.22 - timeRatio * 0.19;
+
+  const gateScale =
+    0.78 + timeRatio * 0.28;
+
+  boostTarget.style.setProperty(
+    "--gate-scale",
+    gateScale.toFixed(3)
+  );
 
   boostApproach.style.transform =
-    "scale(" + approachScale.toFixed(3) + ")";
+    "translateZ(-42px) scale(" +
+    approachScale.toFixed(3) +
+    ")";
 
   boostApproach.style.opacity =
-    String(Math.max(0.14, 0.38 - timeRatio * 0.12));
+    String(
+      Math.max(
+        0.10,
+        0.26 - timeRatio * 0.10
+      )
+    );
 
   boostCore.style.setProperty(
     "--boost-fill",
     (progressRatio * 360) + "deg"
+  );
+
+  boostCore.style.setProperty(
+    "--rush-progress",
+    (progressRatio * 100).toFixed(1) + "%"
+  );
+
+  boostTarget.style.setProperty(
+    "--rush-progress",
+    (progressRatio * 100).toFixed(1) + "%"
   );
 
   boostProgressDisplay.textContent =
@@ -2725,6 +2896,8 @@ function gameLoop(now) {
           lineStretch.toFixed(2) +
           ")";
       }
+
+      updateDepthTunnel(speedIntensity);
     }
 
     if (shouldPaintVisual) {
@@ -3055,6 +3228,9 @@ function resetGame() {
 
   speedLinesContainer.style.opacity =
     "0";
+
+  depthTunnel.style.opacity = "0";
+  depthStage.style.transform = "rotateZ(0deg)";
 
   body.classList.remove(
     "playing",
