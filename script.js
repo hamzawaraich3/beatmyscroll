@@ -697,52 +697,74 @@ function playSfx(key, playbackRate) {
   if (!soundEnabled) return;
 
   const requestId = musicRequestId;
+  const sound = audioBank[key];
 
-  // Prevent simultaneous overlapping copies of the same scream / click.
-  for (const effect of playingEffects) {
-    if (effect.dataset && effect.dataset.effect === key) {
-      effect.pause();
-      playingEffects.delete(effect);
-    }
+  if (!sound) return;
+
+  if (
+    requestId !== musicRequestId &&
+    key !== "fahh" &&
+    key !== "click"
+  ) {
+    return;
   }
 
-  void ensureAudioBank().then(function(bank) {
-    if (!bank || !soundEnabled) return;
-    if (
-      requestId !== musicRequestId &&
-      key !== "fahh" &&
-      key !== "click"
-    ) {
-      return;
-    }
+  // Reuse the same media element. Creating a brand-new Audio() later in a run
+  // is less reliable on iOS / older browsers because that new element may not
+  // inherit the original user gesture's playback permission.
+  sound.pause();
 
-    const original = bank[key];
-    if (!original) return;
+  try {
+    sound.currentTime = 0;
+  } catch (error) {}
 
-    const sound = new Audio(original.src);
+  if (sound.preload !== "auto") {
     sound.preload = "auto";
-    sound.volume = AUDIO_VOLUME[key] || 0.5;
-    sound.playbackRate = playbackRate || 1;
-    sound.dataset.effect = key;
-
-    playingEffects.add(sound);
-
-    const cleanup = function() {
-      playingEffects.delete(sound);
-    };
-
-    sound.addEventListener("ended", cleanup, { once: true });
-    sound.addEventListener("error", cleanup, { once: true });
 
     try {
-      const playing = sound.play();
-      if (playing && typeof playing.catch === "function") {
-        playing.catch(cleanup);
-      }
-    } catch (error) {
-      cleanup();
+      sound.load();
+    } catch (error) {}
+  }
+
+  sound.muted = false;
+  sound.volume =
+    AUDIO_VOLUME[key] || 0.5;
+
+  sound.playbackRate =
+    playbackRate || 1;
+
+  sound.dataset.effect = key;
+  playingEffects.add(sound);
+
+  const cleanup = function() {
+    playingEffects.delete(sound);
+  };
+
+  sound.onended = cleanup;
+  sound.onerror = cleanup;
+
+  try {
+    const playing = sound.play();
+
+    if (
+      playing &&
+      typeof playing.then === "function"
+    ) {
+      playing.catch(function(error) {
+        cleanup();
+
+        if (
+          error &&
+          error.name === "NotAllowedError"
+        ) {
+          audioUnlocked = false;
+          updateSoundButton();
+        }
+      });
     }
-  });
+  } catch (error) {
+    cleanup();
+  }
 }
 
 function stopAllAudio() {
