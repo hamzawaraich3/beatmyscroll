@@ -2787,3 +2787,29 @@ body.lite-mode .landing-nav {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+.landing-footer > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.landing-footer strong {
+  color: #a7b3b8;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.landing-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .landing-footer nav {
+    justify-content: flex-start;
+  }
+}
