@@ -213,6 +213,7 @@ const newBestDisplay = document.getElementById("new-best");
 
 const grid = document.querySelector(".grid");
 const speedLinesContainer = document.getElementById("speed-lines");
+const depthCanvas = document.getElementById("depth-canvas");
 const depthTunnel = document.getElementById("depth-tunnel");
 const depthStage = document.getElementById("depth-stage");
 const depthFloor = depthTunnel.querySelector(".depth-floor");
@@ -956,6 +957,730 @@ for (let i = 0; i < 24; i++) {
   speedLinesContainer.appendChild(line);
   speedLines.push(line);
 }
+
+
+/* =========================================================
+   PROJECTED 3D CANVAS CORRIDOR
+   CPU projects real 3D points into a lightweight 2D canvas.
+========================================================= */
+
+const depthContext =
+  depthCanvas &&
+  depthCanvas.getContext
+    ? depthCanvas.getContext("2d", {
+        alpha: true,
+        desynchronized: true
+      })
+    : null;
+
+let depthCanvasWidth = 0;
+let depthCanvasHeight = 0;
+let depthCanvasDpr = 1;
+let lastDepthCanvasFrame = 0;
+
+const depthParticles = [];
+
+for (let i = 0; i < 42; i++) {
+  depthParticles.push({
+    x: (Math.random() - 0.5) * 10,
+    y: (Math.random() - 0.5) * 6,
+    z: 3 + Math.random() * 30,
+    size: 0.5 + Math.random() * 1.6
+  });
+}
+
+function resizeDepthCanvas() {
+  if (!depthContext || !depthCanvas) return;
+
+  const rect =
+    depthCanvas.getBoundingClientRect();
+
+  const dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      liteMode ? 1 : 1.5
+    );
+
+  const width =
+    Math.max(1, Math.round(rect.width));
+
+  const height =
+    Math.max(1, Math.round(rect.height));
+
+  if (
+    width === depthCanvasWidth &&
+    height === depthCanvasHeight &&
+    dpr === depthCanvasDpr
+  ) {
+    return;
+  }
+
+  depthCanvasWidth = width;
+  depthCanvasHeight = height;
+  depthCanvasDpr = dpr;
+
+  depthCanvas.width =
+    Math.round(width * dpr);
+
+  depthCanvas.height =
+    Math.round(height * dpr);
+
+  depthContext.setTransform(
+    dpr, 0, 0, dpr, 0, 0
+  );
+}
+
+function projectDepthPoint(
+  x,
+  y,
+  z,
+  cameraX,
+  cameraY,
+  focal,
+  roll
+) {
+  const safeZ =
+    Math.max(0.55, z);
+
+  const scale =
+    focal / safeZ;
+
+  let px =
+    (x - cameraX) * scale;
+
+  let py =
+    (y - cameraY) * scale;
+
+  const cosRoll =
+    Math.cos(roll);
+
+  const sinRoll =
+    Math.sin(roll);
+
+  const rx =
+    px * cosRoll -
+    py * sinRoll;
+
+  const ry =
+    px * sinRoll +
+    py * cosRoll;
+
+  return {
+    x:
+      depthCanvasWidth * 0.5 +
+      rx,
+
+    y:
+      depthCanvasHeight * 0.47 +
+      ry,
+
+    z: safeZ
+  };
+}
+
+function drawDepthLine(
+  a,
+  b,
+  color,
+  alpha,
+  width
+) {
+  if (!depthContext) return;
+
+  depthContext.globalAlpha =
+    alpha;
+
+  depthContext.strokeStyle =
+    color;
+
+  depthContext.lineWidth =
+    width;
+
+  depthContext.beginPath();
+  depthContext.moveTo(a.x, a.y);
+  depthContext.lineTo(b.x, b.y);
+  depthContext.stroke();
+}
+
+function drawDepthSegment3D(
+  a,
+  b,
+  cameraX,
+  cameraY,
+  focal,
+  roll,
+  color,
+  alpha,
+  width
+) {
+  if (
+    a.z <= 0.5 &&
+    b.z <= 0.5
+  ) {
+    return;
+  }
+
+  const pa =
+    projectDepthPoint(
+      a.x,
+      a.y,
+      a.z,
+      cameraX,
+      cameraY,
+      focal,
+      roll
+    );
+
+  const pb =
+    projectDepthPoint(
+      b.x,
+      b.y,
+      b.z,
+      cameraX,
+      cameraY,
+      focal,
+      roll
+    );
+
+  drawDepthLine(
+    pa,
+    pb,
+    color,
+    alpha,
+    width
+  );
+}
+
+function renderProjectedDepth(
+  now,
+  frameDelta,
+  speedIntensity
+) {
+  if (!depthContext || !depthCanvas) {
+    return false;
+  }
+
+  const minInterval =
+    liteMode ? 33 : 16;
+
+  if (
+    now - lastDepthCanvasFrame <
+    minInterval
+  ) {
+    return true;
+  }
+
+  lastDepthCanvasFrame = now;
+
+  resizeDepthCanvas();
+
+  if (
+    depthCanvasWidth < 10 ||
+    depthCanvasHeight < 10
+  ) {
+    return true;
+  }
+
+  const speedPresence =
+    clamp(
+      (currentSpeed - 0.8) / 15,
+      0,
+      1
+    );
+
+  depthCanvas.style.opacity =
+    (
+      speedPresence *
+      (liteMode ? 0.56 : 1)
+    ).toFixed(3);
+
+  depthContext.clearRect(
+    0,
+    0,
+    depthCanvasWidth,
+    depthCanvasHeight
+  );
+
+  if (speedPresence <= 0.01) {
+    return true;
+  }
+
+  const zone =
+    ARCADE_ZONES[
+      Math.min(
+        currentZoneIndex,
+        ARCADE_ZONES.length - 1
+      )
+    ];
+
+  const color =
+    zone ? zone.color : "#21e6ff";
+
+  const intensity =
+    clamp(
+      currentSpeed / 52,
+      0,
+      1
+    );
+
+  const corridorHalfWidth =
+    5.3;
+
+  const corridorHalfHeight =
+    3.25;
+
+  const nearZ =
+    1.15;
+
+  const farZ =
+    liteMode ? 23 : 31;
+
+  const ringSpacing =
+    liteMode ? 3.1 : 2.25;
+
+  const speedTravel =
+    visualDistance *
+    (0.020 + intensity * 0.052);
+
+  const ringOffset =
+    speedTravel % ringSpacing;
+
+  const cameraX =
+    Math.sin(
+      visualDistance / 900
+    ) *
+    intensity *
+    0.34;
+
+  const cameraY =
+    Math.cos(
+      visualDistance / 1250
+    ) *
+    intensity *
+    0.12;
+
+  const roll =
+    Math.sin(
+      visualDistance / 760
+    ) *
+    intensity *
+    0.045;
+
+  const focal =
+    Math.min(
+      depthCanvasWidth,
+      depthCanvasHeight
+    ) *
+    (
+      0.88 +
+      intensity * 0.34
+    );
+
+  depthContext.save();
+
+  depthContext.globalCompositeOperation =
+    "lighter";
+
+  if (!liteMode) {
+    depthContext.shadowColor =
+      color;
+
+    depthContext.shadowBlur =
+      7 + intensity * 13;
+  }
+
+  // Longitudinal floor + ceiling rails.
+  const floorXs =
+    liteMode
+      ? [-5.3, -2.65, 0, 2.65, 5.3]
+      : [-5.3, -3.53, -1.76, 0, 1.76, 3.53, 5.3];
+
+  for (const x of floorXs) {
+    drawDepthSegment3D(
+      {
+        x,
+        y: corridorHalfHeight,
+        z: nearZ
+      },
+      {
+        x,
+        y: corridorHalfHeight,
+        z: farZ
+      },
+      cameraX,
+      cameraY,
+      focal,
+      roll,
+      color,
+      0.34 + intensity * 0.30,
+      1
+    );
+
+    if (!liteMode) {
+      drawDepthSegment3D(
+        {
+          x,
+          y: -corridorHalfHeight,
+          z: nearZ
+        },
+        {
+          x,
+          y: -corridorHalfHeight,
+          z: farZ
+        },
+        cameraX,
+        cameraY,
+        focal,
+        roll,
+        color,
+        0.20 + intensity * 0.22,
+        1
+      );
+    }
+  }
+
+  // Side-wall longitudinal rails.
+  const wallYs =
+    liteMode
+      ? [-3.25, 0, 3.25]
+      : [-3.25, -1.62, 0, 1.62, 3.25];
+
+  for (const y of wallYs) {
+    for (const x of [
+      -corridorHalfWidth,
+      corridorHalfWidth
+    ]) {
+      drawDepthSegment3D(
+        {
+          x,
+          y,
+          z: nearZ
+        },
+        {
+          x,
+          y,
+          z: farZ
+        },
+        cameraX,
+        cameraY,
+        focal,
+        roll,
+        color,
+        0.22 + intensity * 0.25,
+        1
+      );
+    }
+  }
+
+  // Cross-section rings physically rush through the camera.
+  let ringIndex = 0;
+
+  for (
+    let z = nearZ + ringSpacing - ringOffset;
+    z < farZ;
+    z += ringSpacing
+  ) {
+    if (z < nearZ) continue;
+
+    const depthFactor =
+      1 -
+      clamp(
+        (z - nearZ) /
+        (farZ - nearZ),
+        0,
+        1
+      );
+
+    const ringAlpha =
+      0.17 +
+      depthFactor *
+      (
+        0.52 +
+        intensity * 0.24
+      );
+
+    const ringWidth =
+      1 +
+      depthFactor *
+      (
+        liteMode
+          ? 1.2
+          : 2.8
+      );
+
+    const xWobble =
+      Math.sin(
+        visualDistance / 480 +
+        ringIndex * 0.82
+      ) *
+      intensity *
+      0.11;
+
+    const yWobble =
+      Math.cos(
+        visualDistance / 620 +
+        ringIndex * 0.61
+      ) *
+      intensity *
+      0.06;
+
+    const corners = [
+      {
+        x: -corridorHalfWidth + xWobble,
+        y: -corridorHalfHeight + yWobble,
+        z
+      },
+      {
+        x: corridorHalfWidth + xWobble,
+        y: -corridorHalfHeight + yWobble,
+        z
+      },
+      {
+        x: corridorHalfWidth + xWobble,
+        y: corridorHalfHeight + yWobble,
+        z
+      },
+      {
+        x: -corridorHalfWidth + xWobble,
+        y: corridorHalfHeight + yWobble,
+        z
+      }
+    ];
+
+    for (let edge = 0; edge < 4; edge++) {
+      drawDepthSegment3D(
+        corners[edge],
+        corners[(edge + 1) % 4],
+        cameraX,
+        cameraY,
+        focal,
+        roll,
+        color,
+        ringAlpha,
+        ringWidth
+      );
+    }
+
+    // Floor / ceiling cross-bars make speed through depth obvious.
+    drawDepthSegment3D(
+      {
+        x: -corridorHalfWidth,
+        y: corridorHalfHeight,
+        z
+      },
+      {
+        x: corridorHalfWidth,
+        y: corridorHalfHeight,
+        z
+      },
+      cameraX,
+      cameraY,
+      focal,
+      roll,
+      color,
+      ringAlpha * 0.72,
+      ringWidth
+    );
+
+    if (!liteMode) {
+      drawDepthSegment3D(
+        {
+          x: -corridorHalfWidth,
+          y: -corridorHalfHeight,
+          z
+        },
+        {
+          x: corridorHalfWidth,
+          y: -corridorHalfHeight,
+          z
+        },
+        cameraX,
+        cameraY,
+        focal,
+        roll,
+        color,
+        ringAlpha * 0.50,
+        ringWidth
+      );
+    }
+
+    ringIndex += 1;
+  }
+
+  // 3D particles / debris fly toward the player.
+  const particleLimit =
+    liteMode
+      ? 14
+      : depthParticles.length;
+
+  const particleAdvance =
+    (
+      0.08 +
+      intensity * 0.42
+    ) *
+    (
+      frameDelta / 16.67
+    );
+
+  for (
+    let i = 0;
+    i < particleLimit;
+    i++
+  ) {
+    const particle =
+      depthParticles[i];
+
+    particle.z -=
+      particleAdvance;
+
+    if (particle.z < 0.9) {
+      particle.z =
+        farZ -
+        Math.random() * 5;
+
+      particle.x =
+        (Math.random() - 0.5) * 10;
+
+      particle.y =
+        (Math.random() - 0.5) * 6;
+    }
+
+    const front =
+      projectDepthPoint(
+        particle.x,
+        particle.y,
+        particle.z,
+        cameraX,
+        cameraY,
+        focal,
+        roll
+      );
+
+    const back =
+      projectDepthPoint(
+        particle.x,
+        particle.y,
+        Math.min(
+          farZ,
+          particle.z + 0.7 + intensity * 1.6
+        ),
+        cameraX,
+        cameraY,
+        focal,
+        roll
+      );
+
+    const particleDepth =
+      1 -
+      clamp(
+        (particle.z - nearZ) /
+        (farZ - nearZ),
+        0,
+        1
+      );
+
+    drawDepthLine(
+      back,
+      front,
+      color,
+      (
+        0.10 +
+        particleDepth *
+        0.56
+      ) *
+      speedPresence,
+      particle.size +
+      particleDepth * 1.5
+    );
+  }
+
+  // A distant rotating wireframe octahedron gives the eye a solid
+  // reference object in actual depth.
+  if (!liteMode && currentZoneIndex >= 2) {
+    const coreZ =
+      8.5 -
+      Math.sin(
+        visualDistance / 700
+      ) *
+      0.7;
+
+    const coreSize =
+      0.72 +
+      intensity * 0.34;
+
+    const rotation =
+      visualDistance / 330;
+
+    const rawCore = [
+      [0, -coreSize * 1.25, 0],
+      [coreSize, 0, 0],
+      [0, coreSize * 1.25, 0],
+      [-coreSize, 0, 0],
+      [0, 0, coreSize],
+      [0, 0, -coreSize]
+    ];
+
+    const rotatedCore =
+      rawCore.map(function(vertex) {
+        const x = vertex[0];
+        const y = vertex[1];
+        const z = vertex[2];
+
+        const cosR =
+          Math.cos(rotation);
+
+        const sinR =
+          Math.sin(rotation);
+
+        return {
+          x:
+            x * cosR -
+            z * sinR,
+
+          y,
+
+          z:
+            coreZ +
+            x * sinR +
+            z * cosR
+        };
+      });
+
+    const coreEdges = [
+      [0,1],[0,2],[0,3],[0,4],
+      [1,2],[2,3],[3,4],[4,1],
+      [5,1],[5,2],[5,3],[5,4]
+    ];
+
+    for (const edge of coreEdges) {
+      drawDepthSegment3D(
+        rotatedCore[edge[0]],
+        rotatedCore[edge[1]],
+        cameraX,
+        cameraY,
+        focal,
+        roll,
+        color,
+        0.46 + intensity * 0.34,
+        1.4
+      );
+    }
+  }
+
+  depthContext.restore();
+
+  return true;
+}
+
+if (depthContext) {
+  body.classList.add("canvas-depth");
+}
+
+window.addEventListener(
+  "resize",
+  resizeDepthCanvas,
+  { passive: true }
+);
 
 
 /* =========================================================
@@ -2995,7 +3720,16 @@ function gameLoop(now) {
           ")";
       }
 
-      updateDepthTunnel(speedIntensity);
+      const canvasRendered =
+        renderProjectedDepth(
+          now,
+          frameDelta,
+          speedIntensity
+        );
+
+      if (!canvasRendered) {
+        updateDepthTunnel(speedIntensity);
+      }
     }
 
     if (shouldPaintVisual) {
@@ -3330,6 +4064,19 @@ function resetGame() {
 
   depthTunnel.style.opacity = "0";
   depthStage.style.transform = "rotateZ(0deg)";
+
+  if (depthContext && depthCanvas) {
+    resizeDepthCanvas();
+
+    depthContext.clearRect(
+      0,
+      0,
+      depthCanvasWidth,
+      depthCanvasHeight
+    );
+
+    depthCanvas.style.opacity = "0";
+  }
 
   body.classList.remove(
     "playing",
