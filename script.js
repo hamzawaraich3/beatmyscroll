@@ -215,6 +215,8 @@ const grid = document.querySelector(".grid");
 const speedLinesContainer = document.getElementById("speed-lines");
 const depthTunnel = document.getElementById("depth-tunnel");
 const depthStage = document.getElementById("depth-stage");
+const depthFloor = depthTunnel.querySelector(".depth-floor");
+const depthCeiling = depthTunnel.querySelector(".depth-ceiling");
 
 const challengeBox = document.getElementById("challenge-box");
 const challengeScoreDisplay = document.getElementById("challenge-score");
@@ -961,8 +963,11 @@ for (let i = 0; i < 24; i++) {
 ========================================================= */
 
 const depthFrames = [];
-const DEPTH_FRAME_COUNT = 10;
-const DEPTH_SPAN = 1650;
+const DEPTH_FRAME_COUNT = 14;
+const DEPTH_FAR_Z = -2100;
+const DEPTH_NEAR_Z = 320;
+const DEPTH_SPAN =
+  DEPTH_NEAR_Z - DEPTH_FAR_Z;
 
 for (let i = 0; i < DEPTH_FRAME_COUNT; i++) {
   const frame = document.createElement("div");
@@ -990,32 +995,94 @@ function updateDepthTunnel(speedIntensity) {
 
   const visibility =
     clamp(
-      (currentSpeed - 2) / 24,
+      (currentSpeed - 1) / 16,
+      0,
+      1
+    );
+
+  const intensity =
+    clamp(
+      currentSpeed / 52,
       0,
       1
     );
 
   depthTunnel.style.opacity =
-    (visibility * (liteMode ? 0.34 : 0.72)).toFixed(3);
+    (
+      visibility *
+      (liteMode ? 0.48 : 0.96)
+    ).toFixed(3);
+
+  // Strong FOV compression makes the corridor visibly deepen as speed rises.
+  const perspective =
+    (liteMode ? 680 : 760) -
+    intensity * (liteMode ? 90 : 250);
+
+  depthTunnel.style.perspective =
+    perspective.toFixed(0) + "px";
+
+  const cameraSwayX =
+    Math.sin(visualDistance / 930) *
+    (1.2 + intensity * 3.8);
+
+  const cameraSwayY =
+    Math.cos(visualDistance / 1180) *
+    (0.4 + intensity * 1.5);
+
+  depthTunnel.style.perspectiveOrigin =
+    (50 + cameraSwayX).toFixed(2) + "% " +
+    (47 + cameraSwayY).toFixed(2) + "%";
+
+  depthTunnel.style.setProperty(
+    "--depth-intensity",
+    intensity.toFixed(3)
+  );
+
+  depthTunnel.style.setProperty(
+    "--vp-x",
+    (50 + cameraSwayX).toFixed(2) + "%"
+  );
+
+  depthTunnel.style.setProperty(
+    "--vp-y",
+    (47 + cameraSwayY).toFixed(2) + "%"
+  );
+
+  const planeFlow =
+    (
+      visualDistance *
+      (0.85 + intensity * 2.4)
+    ) % 180;
+
+  depthFloor.style.backgroundPosition =
+    "center " + planeFlow.toFixed(1) + "px";
+
+  depthCeiling.style.backgroundPosition =
+    "center " + (-planeFlow).toFixed(1) + "px";
 
   const travel =
     (
       visualDistance *
-      (0.20 + speedIntensity * 0.34)
+      (0.58 + speedIntensity * 1.65)
     ) %
     DEPTH_SPAN;
 
   const frameLimit =
     liteMode
-      ? Math.min(5, depthFrames.length)
+      ? Math.min(6, depthFrames.length)
       : depthFrames.length;
 
-  const roll =
-    Math.sin(visualDistance / 820) *
-    (0.8 + speedIntensity * 2.8);
+  const bank =
+    Math.sin(visualDistance / 760) *
+    (1.0 + intensity * 5.5);
+
+  const pitch =
+    Math.cos(visualDistance / 1100) *
+    (0.25 + intensity * 1.1);
 
   depthStage.style.transform =
-    "rotateZ(" + roll.toFixed(2) + "deg)";
+    "rotateZ(" + bank.toFixed(2) + "deg) " +
+    "rotateX(" + pitch.toFixed(2) + "deg)";
 
   for (let i = 0; i < depthFrames.length; i++) {
     const frame = depthFrames[i];
@@ -1036,23 +1103,32 @@ function updateDepthTunnel(speedIntensity) {
       (phase + travel) % DEPTH_SPAN;
 
     const z =
-      -DEPTH_SPAN + wrapped;
+      DEPTH_FAR_Z + wrapped;
 
     const depthRatio =
       clamp(
-        (z + DEPTH_SPAN) / DEPTH_SPAN,
+        (z - DEPTH_FAR_Z) / DEPTH_SPAN,
         0,
         1
       );
 
     const twist =
       Math.sin(
-        visualDistance / 560 + i * 0.82
+        visualDistance / 430 + i * 0.88
       ) *
-      (0.6 + speedIntensity * 2.2);
+      (0.8 + intensity * 4.2);
+
+    const lateral =
+      Math.sin(
+        visualDistance / 820 + i * 1.17
+      ) *
+      intensity *
+      18;
 
     frame.style.transform =
-      "translate3d(-50%, -50%, " +
+      "translate3d(" +
+      "calc(-50% + " + lateral.toFixed(1) + "px)," +
+      " -50%," +
       z.toFixed(1) +
       "px) rotateZ(" +
       twist.toFixed(2) +
@@ -1060,13 +1136,17 @@ function updateDepthTunnel(speedIntensity) {
 
     frame.style.opacity =
       (
-        0.035 +
+        0.10 +
         depthRatio *
-        (0.12 + speedIntensity * 0.42)
+        (0.34 + intensity * 0.56)
       ).toFixed(3);
+
+    frame.style.setProperty(
+      "--frame-depth",
+      depthRatio.toFixed(3)
+    );
   }
 }
-
 
 /* =========================================================
    HELPERS
