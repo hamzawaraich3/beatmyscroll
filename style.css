@@ -4239,3 +4239,385 @@ body.rush-active .rush-gate {
 body.lite-mode .depth-tunnel.tunnel-punch {
   animation: none;
 }
+
+
+/* =========================================================
+   3D TUNNEL V2 — EXAGGERATED DEPTH
+========================================================= */
+
+.depth-tunnel {
+  --vp-x: 50%;
+  --vp-y: 47%;
+  --depth-intensity: 0;
+
+  background:
+    radial-gradient(
+      circle at var(--vp-x) var(--vp-y),
+      color-mix(in srgb, var(--tunnel-color) 10%, transparent) 0 2%,
+      transparent 15%
+    );
+}
+
+.depth-floor,
+.depth-ceiling {
+  position: absolute;
+  left: 50%;
+
+  width: 155vw;
+  height: 72vh;
+
+  pointer-events: none;
+
+  transform-style: preserve-3d;
+
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 30%,
+        transparent
+      ) 0 1px,
+      transparent 1px 48px
+    ),
+    repeating-linear-gradient(
+      to right,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 20%,
+        transparent
+      ) 0 1px,
+      transparent 1px 82px
+    );
+
+  background-size:
+    100% 48px,
+    82px 100%;
+
+  opacity:
+    calc(
+      0.20 +
+      var(--depth-intensity) * 0.44
+    );
+
+  will-change:
+    transform,
+    background-position,
+    opacity;
+}
+
+.depth-floor {
+  top: var(--vp-y);
+
+  transform-origin: center top;
+
+  transform:
+    translateX(-50%)
+    rotateX(67deg)
+    translateZ(-95px);
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,0.42) 10%,
+      #000 38%,
+      #000 100%
+    );
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,0.42) 10%,
+      #000 38%,
+      #000 100%
+    );
+}
+
+.depth-ceiling {
+  bottom:
+    calc(
+      100% - var(--vp-y)
+    );
+
+  transform-origin: center bottom;
+
+  transform:
+    translateX(-50%)
+    rotateX(-67deg)
+    translateZ(-95px);
+
+  -webkit-mask-image:
+    linear-gradient(
+      to top,
+      transparent 0%,
+      rgba(0,0,0,0.38) 10%,
+      #000 40%,
+      #000 100%
+    );
+
+  mask-image:
+    linear-gradient(
+      to top,
+      transparent 0%,
+      rgba(0,0,0,0.38) 10%,
+      #000 40%,
+      #000 100%
+    );
+}
+
+.depth-rail {
+  position: absolute;
+  left: var(--vp-x);
+  top: var(--vp-y);
+
+  width: 78vmax;
+  height: 2px;
+
+  transform-origin: 0 50%;
+
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 74%,
+        #fff
+      ),
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 26%,
+        transparent
+      ) 42%,
+      transparent 100%
+    );
+
+  opacity:
+    calc(
+      0.30 +
+      var(--depth-intensity) * 0.56
+    );
+
+  box-shadow:
+    0 0 8px
+    color-mix(
+      in srgb,
+      var(--tunnel-color) 25%,
+      transparent
+    );
+
+  pointer-events: none;
+}
+
+.rail-left {
+  transform: rotate(154deg);
+}
+
+.rail-right {
+  transform: rotate(26deg);
+}
+
+.rail-top-left {
+  transform: rotate(206deg);
+}
+
+.rail-top-right {
+  transform: rotate(-26deg);
+}
+
+.depth-vanishing-point {
+  left: var(--vp-x);
+  top: var(--vp-y);
+
+  width: 13px;
+  height: 13px;
+
+  opacity:
+    calc(
+      0.64 +
+      var(--depth-intensity) * 0.30
+    );
+
+  border-width: 2px;
+
+  box-shadow:
+    0 0 12px
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 52%,
+        transparent
+      ),
+    0 0 38px
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 22%,
+        transparent
+      );
+}
+
+.depth-frame {
+  width: min(88vw, 1220px);
+  height: min(68vh, 720px);
+
+  border-width:
+    calc(
+      1px +
+      var(--frame-depth, 0) * 2px
+    );
+
+  border-color:
+    color-mix(
+      in srgb,
+      var(--tunnel-color)
+        calc(36% + var(--frame-depth, 0) * 54%),
+      transparent
+    );
+
+  border-radius:
+    calc(
+      14px +
+      var(--frame-depth, 0) * 18px
+    );
+
+  box-shadow:
+    0 0
+      calc(8px + var(--frame-depth, 0) * 30px)
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 24%,
+        transparent
+      ),
+    inset 0 0
+      calc(8px + var(--frame-depth, 0) * 20px)
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 10%,
+        transparent
+      );
+}
+
+.depth-frame::before {
+  inset: 12%;
+
+  border-color:
+    color-mix(
+      in srgb,
+      var(--tunnel-color) 38%,
+      transparent
+    );
+}
+
+/* At high speed the outer edges darken slightly, making the bright
+   vanishing corridor feel much deeper. */
+#game-screen::marker {
+  display: none;
+}
+
+body.speed-2 #game-screen {
+  box-shadow:
+    inset 0 0 100px rgba(0,0,0,0.12);
+}
+
+body.speed-3 #game-screen {
+  box-shadow:
+    inset 0 0 150px rgba(0,0,0,0.28);
+}
+
+body.speed-4 #game-screen {
+  box-shadow:
+    inset 0 0 190px rgba(0,0,0,0.40);
+}
+
+
+/* =========================================================
+   STRONGER 3D RUSH GATE
+========================================================= */
+
+.boost-target.rush-gate {
+  --gate-scale: 0.72;
+
+  width: clamp(230px, 29vw, 365px);
+  height: clamp(126px, 17vw, 198px);
+}
+
+.boost-target.rush-gate .rush-gate-frame {
+  inset: -22px;
+
+  border-width: 2px;
+
+  opacity: 0.42;
+}
+
+.rush-gate-depth {
+  width: 30px;
+
+  opacity: 0.72;
+}
+
+.rush-gate-depth.depth-a {
+  left: -30px;
+}
+
+.rush-gate-depth.depth-b {
+  right: -30px;
+}
+
+
+/* =========================================================
+   LOW-END SAFETY
+========================================================= */
+
+body.lite-mode .depth-floor,
+body.lite-mode .depth-ceiling {
+  opacity: 0.18;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(
+        in srgb,
+        var(--tunnel-color) 20%,
+        transparent
+      ) 0 1px,
+      transparent 1px 60px
+    );
+}
+
+body.lite-mode .depth-rail {
+  box-shadow: none;
+  opacity: 0.28;
+}
+
+body.lite-mode .depth-ceiling {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .depth-floor,
+  .depth-ceiling {
+    width: 190vw;
+  }
+
+  .depth-floor {
+    transform:
+      translateX(-50%)
+      rotateX(70deg)
+      translateZ(-80px);
+  }
+
+  .depth-ceiling {
+    transform:
+      translateX(-50%)
+      rotateX(-70deg)
+      translateZ(-80px);
+  }
+
+  .depth-rail {
+    width: 98vmax;
+  }
+
+  .depth-frame {
+    width: 94vw;
+    height: 64vh;
+  }
+}
