@@ -4598,3 +4598,74 @@ body.lite-mode .depth-ceiling {
     height: 64vh;
   }
 }
+
+
+/* =========================================================
+   PROJECTED 3D CANVAS — PRIMARY DEPTH RENDERER
+========================================================= */
+
+.depth-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+
+  width: 100%;
+  height: 100%;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  will-change: opacity;
+}
+
+/* When canvas projection is supported, hide the CSS tunnel so the
+   player sees one coherent depth system instead of stacked wireframes. */
+body.canvas-depth .depth-tunnel {
+  display: none;
+}
+
+/* Keep gameplay text / targets above the 3D scene. */
+#speed-lines {
+  z-index: 6;
+}
+
+#game-message,
+#distance-marker,
+.challenge-target,
+.boost-target,
+#danger-bar,
+#danger-text {
+  z-index: 20;
+}
+
+/* Slight vignette makes the projected geometry read as a corridor. */
+body.canvas-depth.playing #game-screen {
+  background:
+    radial-gradient(
+      ellipse at 50% 47%,
+      rgba(255,255,255,0.015) 0 10%,
+      transparent 34%
+    );
+}
+
+body.canvas-depth.speed-3 #game-screen {
+  box-shadow:
+    inset 0 0 135px rgba(0,0,0,0.34);
+}
+
+body.canvas-depth.speed-4 #game-screen {
+  box-shadow:
+    inset 0 0 190px rgba(0,0,0,0.50);
+}
+
+/* Lite mode keeps the canvas but drops its pixel density / geometry in JS. */
+body.lite-mode .depth-canvas {
+  filter: none !important;
+}
+
+@media (max-width: 600px) {
+  .depth-canvas {
+    inset: 0;
+  }
+}
