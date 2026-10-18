@@ -100,21 +100,164 @@ export class LeaderboardStore extends DurableObject {
     );
   }
 
-  getTop15(field) {
+  getTop(field, limit = 15) {
     const allowed = ["best_score", "best_avg_speed", "best_max_speed"];
     if (!allowed.includes(field)) {
       throw new Error("Invalid leaderboard metric");
     }
+
+    const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+
     return this.sql.exec(
-      `SELECT username, ${field} AS value
+      `SELECT username, ${field} AS value, runs, updated_at
          FROM players
          WHERE runs > 0
          ORDER BY ${field} DESC, updated_at ASC, username COLLATE NOCASE ASC
-         LIMIT 15`
+         LIMIT ?`,
+      safeLimit
     ).toArray().map(row => ({
       username: row.username,
-      value: Number(row.value)
+      value: Number(row.value),
+      runs: Number(row.runs),
+      updatedAt: Number(row.updated_at)
     }));
+  }
+
+  getQuantiles(field) {
+    const allowed = ["best_score", "best_avg_speed", "best_max_speed"];
+    if (!allowed.includes(field)) {
+      throw new Error("Invalid benchmark metric");
+    }
+
+    const countRow = this.sql.exec(
+      `SELECT COUNT(*) AS count FROM players WHERE runs > 0 AND ${field} > 0`
+    ).toArray()[0];
+
+    const count = Number(countRow ? countRow.count : 0);
+
+    if (!count) {
+      return {
+        count: 0,
+        p10: 0,
+        p25: 0,
+        p50: 0,
+        p75: 0,
+        p90: 0,
+        p95: 0,
+        p99: 0
+      };
+    }
+
+    const quantile = percentile => {
+      const offset = Math.max(
+        0,
+        Math.min(
+          count - 1,
+          Math.ceil((percentile / 100) * count) - 1
+        )
+      );
+
+      const row = this.sql.exec(
+        `SELECT ${field} AS value
+           FROM players
+           WHERE runs > 0 AND ${field} > 0
+           ORDER BY ${field} ASC
+           LIMIT 1 OFFSET ?`,
+        offset
+      ).toArray()[0];
+
+      return Number(row ? row.value : 0);
+    };
+
+    return {
+      count,
+      p10: quantile(10),
+      p25: quantile(25),
+      p50: quantile(50),
+      p75: quantile(75),
+      p90: quantile(90),
+      p95: quantile(95),
+      p99: quantile(99)
+    };
+  }
+
+  getPublicStats() {
+    const totals = this.sql.exec(
+      `SELECT
+         COUNT(*) AS players,
+         COALESCE(SUM(runs), 0) AS submitted_runs,
+         COALESCE(AVG(best_score), 0) AS avg_best_score,
+         COALESCE(AVG(best_avg_speed), 0) AS avg_best_avg_speed,
+         COALESCE(AVG(best_max_speed), 0) AS avg_best_max_speed,
+         COALESCE(AVG(runs), 0) AS avg_runs_per_player
+       FROM players
+       WHERE runs > 0`
+    ).toArray()[0] || {};
+
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+    const activity = this.sql.exec(
+      `SELECT
+         SUM(CASE WHEN updated_at >= ? THEN 1 ELSE 0 END) AS active_7d,
+         SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS new_30d
+       FROM players
+       WHERE runs > 0`,
+      sevenDaysAgo,
+      thirtyDaysAgo
+    ).toArray()[0] || {};
+
+    return {
+      players: Number(totals.players || 0),
+      submittedRuns: Number(totals.submitted_runs || 0),
+      averages: {
+        bestScore: Number(totals.avg_best_score || 0),
+        bestAverageSpeed: Number(totals.avg_best_avg_speed || 0),
+        bestMaxSpeed: Number(totals.avg_best_max_speed || 0),
+        runsPerPlayer: Number(totals.avg_runs_per_player || 0)
+      },
+      activity: {
+        active7d: Number(activity.active_7d || 0),
+        new30d: Number(activity.new_30d || 0)
+      },
+      records: {
+        score: this.getTop("best_score", 1)[0] || null,
+        average: this.getTop("best_avg_speed", 1)[0] || null,
+        maximum: this.getTop("best_max_speed", 1)[0] || null
+      },
+      benchmarks: {
+        averageSpeed: this.getQuantiles("best_avg_speed"),
+        maxSpeed: this.getQuantiles("best_max_speed")
+      },
+      generatedAt: Date.now()
+    };
+  }
+
+  getPercentile(field, value) {
+    const allowed = ["best_avg_speed", "best_max_speed", "best_score"];
+
+    if (!allowed.includes(field)) {
+      throw new Error("Invalid benchmark metric");
+    }
+
+    const rows = this.sql.exec(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN ${field} <= ? THEN 1 ELSE 0 END) AS at_or_below
+       FROM players
+       WHERE runs > 0 AND ${field} > 0`,
+      value
+    ).toArray()[0] || {};
+
+    const total = Number(rows.total || 0);
+    const atOrBelow = Number(rows.at_or_below || 0);
+
+    return {
+      total,
+      percentile: total
+        ? Math.max(0, Math.min(100, (atOrBelow / total) * 100))
+        : 0
+    };
   }
 
   async findPlayer(request) {
@@ -134,11 +277,74 @@ export class LeaderboardStore extends DurableObject {
     try {
       if (path === "/api/leaderboard" && request.method === "GET") {
         return reply({
-          score: this.getTop15("best_score"),
-          average: this.getTop15("best_avg_speed"),
-          maximum: this.getTop15("best_max_speed")
+          score: this.getTop("best_score", 15),
+          average: this.getTop("best_avg_speed", 15),
+          maximum: this.getTop("best_max_speed", 15)
         });
       }
+      if (path === "/api/stats" && request.method === "GET") {
+        return reply(
+          this.getPublicStats(),
+          200,
+          {
+            "Cache-Control": "public, max-age=60, stale-while-revalidate=300"
+          }
+        );
+      }
+
+      if (path === "/api/records" && request.method === "GET") {
+        const requested = Number(url.searchParams.get("limit") || "50");
+        const limit = Number.isFinite(requested)
+          ? Math.max(1, Math.min(100, Math.floor(requested)))
+          : 50;
+
+        return reply(
+          {
+            score: this.getTop("best_score", limit),
+            average: this.getTop("best_avg_speed", limit),
+            maximum: this.getTop("best_max_speed", limit),
+            limit,
+            generatedAt: Date.now()
+          },
+          200,
+          {
+            "Cache-Control": "public, max-age=60, stale-while-revalidate=300"
+          }
+        );
+      }
+
+      if (path === "/api/benchmark" && request.method === "GET") {
+        const metricMap = {
+          average: "best_avg_speed",
+          maximum: "best_max_speed",
+          score: "best_score"
+        };
+
+        const metric = url.searchParams.get("metric") || "average";
+        const field = metricMap[metric];
+        const value = Number(url.searchParams.get("value"));
+
+        if (!field || !Number.isFinite(value) || value < 0 || value > 1000000000) {
+          return reply({ error: "Invalid benchmark request." }, 422);
+        }
+
+        const result = this.getPercentile(field, value);
+
+        return reply(
+          {
+            metric,
+            value,
+            total: result.total,
+            percentile: Math.round(result.percentile * 10) / 10,
+            generatedAt: Date.now()
+          },
+          200,
+          {
+            "Cache-Control": "public, max-age=30, stale-while-revalidate=120"
+          }
+        );
+      }
+
 
       if (path === "/api/me" && request.method === "GET") {
         const player = await this.findPlayer(request);
@@ -249,9 +455,9 @@ export class LeaderboardStore extends DurableObject {
           username: player.username,
           message: "Your best scores are saved!",
           leaderboards: {
-            score: this.getTop15("best_score"),
-            average: this.getTop15("best_avg_speed"),
-            maximum: this.getTop15("best_max_speed")
+            score: this.getTop("best_score", 15),
+            average: this.getTop("best_avg_speed", 15),
+            maximum: this.getTop("best_max_speed", 15)
           }
         }, 200, cookieHeader ? { "Set-Cookie": cookieHeader } : {});
       }
