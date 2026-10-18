@@ -189,6 +189,10 @@ const zoneSweep = document.getElementById("zone-sweep");
 const pbGhost = document.getElementById("pb-ghost");
 const pbGhostDelta = document.getElementById("pb-ghost-delta");
 const pbGhostStatus = document.getElementById("pb-ghost-status");
+const overdriveMeter = document.getElementById("overdrive-meter");
+const overdrivePercent = document.getElementById("overdrive-percent");
+const overdriveFill = document.getElementById("overdrive-fill");
+const overdriveStatus = document.getElementById("overdrive-status");
 const bestScoreDisplay = document.getElementById("best-score");
 
 const finalScoreDisplay = document.getElementById("final-score");
@@ -205,6 +209,8 @@ const dailyChallengeStreak = document.getElementById("daily-challenge-streak");
 const dailyResult = document.getElementById("daily-result");
 const dailyResultTitle = document.getElementById("daily-result-title");
 const dailyResultDetail = document.getElementById("daily-result-detail");
+const runAchievements = document.getElementById("run-achievements");
+const runAchievementsList = document.getElementById("run-achievements-list");
 const runTitleDisplay = document.getElementById("run-title");
 const runSummaryDisplay = document.getElementById("run-summary");
 
@@ -307,6 +313,11 @@ let maxRushStreak = 0;
 let panicLatched = false;
 let clutchCount = 0;
 let zoneBannerTimer = null;
+
+let overdriveCharge = 0;
+let overdriveActiveUntil = 0;
+let overdriveActivations = 0;
+let overdriveCooling = false;
 
 let pbGhostTimeline = [];
 let currentRunTimeline = [];
@@ -2049,6 +2060,216 @@ function updateZone(roundedScore) {
   }
 }
 
+function updateOverdrive(now, frameDelta) {
+  const active =
+    now < overdriveActiveUntil;
+
+  if (active) {
+    body.classList.add("overdrive");
+    overdriveCharge = 100;
+    overdriveCooling = true;
+
+    overdriveFill.style.transform =
+      "scaleX(1)";
+
+    overdrivePercent.textContent =
+      "MAX";
+
+    overdriveStatus.textContent =
+      "SYSTEM OVERRIDDEN";
+
+    return;
+  }
+
+  if (body.classList.contains("overdrive")) {
+    body.classList.remove("overdrive");
+    overdriveCharge = 0;
+    overdriveCooling = true;
+  }
+
+  if (
+    overdriveCooling &&
+    currentSpeed < 10
+  ) {
+    overdriveCooling = false;
+  }
+
+  if (!overdriveCooling) {
+    if (currentSpeed >= 18) {
+      const chargeRate =
+        currentSpeed >= 30
+          ? 18
+          : 12;
+
+      overdriveCharge +=
+        chargeRate *
+        (frameDelta / 1000);
+    } else {
+      overdriveCharge -=
+        8 *
+        (frameDelta / 1000);
+    }
+
+    overdriveCharge =
+      clamp(overdriveCharge, 0, 100);
+  } else {
+    overdriveCharge =
+      Math.max(
+        0,
+        overdriveCharge -
+        18 * (frameDelta / 1000)
+      );
+  }
+
+  if (
+    !overdriveCooling &&
+    overdriveCharge >= 100
+  ) {
+    overdriveActiveUntil =
+      now + 5200;
+
+    overdriveActivations += 1;
+    overdriveCharge = 100;
+
+    body.classList.add("overdrive");
+
+    challengeMessageLockUntil =
+      now + 950;
+
+    slamGameMessage(
+      "OVERDRIVE",
+      "#ffe35c"
+    );
+
+    triggerImpact("gold");
+    haptic([12, 18, 26, 18, 34]);
+
+    return;
+  }
+
+  const fraction =
+    overdriveCharge / 100;
+
+  overdriveFill.style.transform =
+    "scaleX(" +
+    fraction.toFixed(3) +
+    ")";
+
+  overdrivePercent.textContent =
+    Math.round(overdriveCharge) + "%";
+
+  if (overdriveCooling) {
+    overdriveStatus.textContent =
+      "COOLDOWN · DROP BELOW 10 /s";
+  } else if (currentSpeed >= 18) {
+    overdriveStatus.textContent =
+      "CHARGING";
+  } else {
+    overdriveStatus.textContent =
+      "HOLD 18+ /s TO CHARGE";
+  }
+}
+
+function renderRunAchievements(run) {
+  const medals = [];
+
+  if (
+    run.grade === "S" ||
+    run.grade === "SS" ||
+    run.grade === "SSS"
+  ) {
+    medals.push({
+      icon: "S",
+      title: "ELITE RUN",
+      detail: run.grade + " grade"
+    });
+  }
+
+  if (run.maxSpeed >= 50) {
+    medals.push({
+      icon: "⚡",
+      title: "WHEEL DESTROYER",
+      detail: run.maxSpeed.toFixed(1) + " max /s"
+    });
+  }
+
+  if (maxRushStreak >= 3) {
+    medals.push({
+      icon: "×" + maxRushStreak,
+      title: "RUSH CHAIN",
+      detail: "Longest streak"
+    });
+  }
+
+  if (clutchCount >= 2) {
+    medals.push({
+      icon: "!",
+      title: "CLUTCH MERCHANT",
+      detail: clutchCount + " saves"
+    });
+  }
+
+  if (run.duration >= 25) {
+    medals.push({
+      icon: "∞",
+      title: "ENDURANCE",
+      detail: run.duration.toFixed(1) + " seconds"
+    });
+  }
+
+  if (overdriveActivations > 0) {
+    medals.push({
+      icon: "OD",
+      title: "OVERDRIVE",
+      detail:
+        overdriveActivations +
+        (overdriveActivations === 1
+          ? " activation"
+          : " activations")
+    });
+  }
+
+  runAchievementsList.replaceChildren();
+
+  if (!medals.length) {
+    runAchievements.hidden = true;
+    return;
+  }
+
+  medals.forEach(function(medal) {
+    const item =
+      document.createElement("div");
+
+    item.className = "run-medal";
+
+    const icon =
+      document.createElement("strong");
+
+    icon.textContent = medal.icon;
+
+    const copy =
+      document.createElement("div");
+
+    const title =
+      document.createElement("span");
+
+    title.textContent = medal.title;
+
+    const detail =
+      document.createElement("small");
+
+    detail.textContent = medal.detail;
+
+    copy.append(title, detail);
+    item.append(icon, copy);
+
+    runAchievementsList.appendChild(item);
+  });
+
+  runAchievements.hidden = false;
+}
+
+
 function getUtcDateKey(date) {
   const d = date || new Date();
 
@@ -3369,6 +3590,11 @@ function startGame() {
   lastGhostSampleAt = 0;
   lastGhostDisplayDelta = null;
 
+  overdriveCharge = 0;
+  overdriveActiveUntil = 0;
+  overdriveActivations = 0;
+  overdriveCooling = false;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -3424,6 +3650,12 @@ function startGame() {
     pbGhostTimeline.length
       ? "RACE YOUR PERSONAL BEST"
       : "SET A PERSONAL BEST";
+
+  overdriveFill.style.transform =
+    "scaleX(0)";
+  overdrivePercent.textContent = "0%";
+  overdriveStatus.textContent =
+    "HOLD 18+ /s TO CHARGE";
 
   updateHUD(true);
 }
@@ -3805,6 +4037,11 @@ function gameLoop(now) {
     currentSpeed =
       Math.max(0, scrollRate) / SCROLL_UNIT;
 
+    updateOverdrive(
+      now,
+      frameDelta
+    );
+
     updatePowerStage(now);
 
     if (
@@ -4096,6 +4333,12 @@ function endGame(now) {
       maxSpeed
     });
 
+  renderRunAchievements({
+    grade: runGrade,
+    maxSpeed,
+    duration: runSeconds
+  });
+
   if (dailyOutcome.cleared) {
     dailyResult.hidden = false;
     dailyResultTitle.textContent =
@@ -4137,6 +4380,7 @@ function endGame(now) {
     "playing",
     "panic",
     "rush-active",
+    "overdrive",
     "speed-2",
     "speed-3",
     "speed-4",
@@ -4224,6 +4468,11 @@ function resetGame() {
   lastGhostSampleAt = 0;
   lastGhostDisplayDelta = null;
 
+  overdriveCharge = 0;
+  overdriveActiveUntil = 0;
+  overdriveActivations = 0;
+  overdriveCooling = false;
+
   lastVisualPaint = 0;
   lastHudPaint = 0;
   lastTimerPaint = 0;
@@ -4289,6 +4538,15 @@ function resetGame() {
   dailyResult.hidden = true;
   dailyResultDetail.textContent = "";
 
+  runAchievements.hidden = true;
+  runAchievementsList.replaceChildren();
+
+  overdriveFill.style.transform =
+    "scaleX(0)";
+  overdrivePercent.textContent = "0%";
+  overdriveStatus.textContent =
+    "HOLD 18+ /s TO CHARGE";
+
   grid.style.backgroundPosition =
     "0 0";
 
@@ -4315,6 +4573,7 @@ function resetGame() {
     "playing",
     "panic",
     "rush-active",
+    "overdrive",
     "speed-2",
     "speed-3",
     "speed-4",
