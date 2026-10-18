@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="How BeatMyScroll measures scrolling, calculates speed and score, detects inactivity, handles RUSH multipliers, and keeps leaderboard metrics comparable." />
+  <link rel="canonical" href="https://beatmyscroll.com/how-it-works.html" />
+  <title>How BeatMyScroll Works</title>
+  <link rel="stylesheet" href="content.css" />
+</head>
+<body>
+<main class="content-shell">
+  <nav class="content-nav" aria-label="Main navigation">
+    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <div class="content-nav-links">
+      <a href="/stats.html">Stats</a><a href="/records.html">Records</a>
+      <a href="/benchmark.html">Benchmark</a><a href="/how-it-works.html" aria-current="page">How It Works</a>
+      <a href="/devlog.html">Dev Log</a><a href="/about.html">About</a>
+    </div>
+  </nav>
+
+  <header class="content-hero">
+    <p class="content-kicker">UNDER THE HOOD</p>
+    <h1>HOW IT<br><em>WORKS.</em></h1>
+    <p class="content-deck">
+      BeatMyScroll looks intentionally chaotic, but the game underneath is
+      simple. Browser input is converted into a normalized scroll rate, that
+      rate drives the speed display and score multiplier, and the run ends when
+      meaningful input disappears for roughly 1.5 seconds.
+    </p>
+  </header>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">01</span><h2>WHAT COUNTS AS A SCROLL?</h2></div>
+    <div class="prose">
+      <p>
+        Browsers do not give every device the same kind of input. A traditional
+        mouse wheel can emit wheel events in discrete steps. A high-resolution
+        wheel or trackpad can emit many smaller deltas. A phone reports touch
+        movement rather than wheel movement at all.
+      </p>
+      <p>
+        BeatMyScroll therefore does not simply count browser events. It takes the
+        magnitude of meaningful wheel or touch movement and converts that input
+        into a common internal distance. That internal distance is what feeds the
+        game's speed calculation.
+      </p>
+      <div class="callout">
+        <strong>Important:</strong> “scrolls/s” is a BeatMyScroll gameplay unit.
+        It is useful for comparing runs inside BeatMyScroll, but it is not a
+        scientific measurement of physical mouse-wheel notches per second.
+      </div>
+      <h3>Why dragging the scrollbar is different</h3>
+      <p>
+        The game listens to actual wheel/touch gameplay input instead of awarding
+        points based on the document's page position. Jumping a browser scrollbar
+        to the bottom therefore does not create the same score as sustained input.
+        This is also why the active game screen itself does not need an infinitely
+        tall web document to create the illusion of an endless run.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">02</span><h2>LIVE SPEED VS. SCORING SPEED</h2></div>
+    <div class="prose">
+      <p>
+        BeatMyScroll intentionally separates the number you see from the number
+        used to keep scoring stable. The <strong>live speed</strong> display is
+        uncapped: if the browser reports an enormous burst, the max-speed stat
+        can preserve that burst.
+      </p>
+      <p>
+        The scoring path uses a normalized rate so unusual hardware or a single
+        giant browser delta cannot make the score explode without limit. This
+        lets the speed stat stay fun and uncapped while the raw-score leaderboard
+        remains more comparable between devices.
+      </p>
+      <h3>Why speed decays</h3>
+      <p>
+        The live rate fades continuously when input slows. This makes acceleration
+        and deceleration visible instead of letting one fast flick leave the HUD
+        stuck at a high speed. The same fading rate drives visual intensity:
+        speed lines stretch, the projected corridor becomes more aggressive, and
+        higher arcade ranks become increasingly unstable.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">03</span><h2>THE SCORE</h2></div>
+    <div class="prose">
+      <p>
+        The raw score is based on input distance multiplied by a speed-dependent
+        scoring multiplier and any active RUSH multiplier. In plain English:
+        <strong>more scrolling scores points, faster scrolling makes those points
+        worth more, and a completed RUSH gate can temporarily multiply them.</strong>
+      </p>
+      <p>
+        This means two runs with the same total input can finish with different
+        scores. The player who maintains a stronger pace and successfully uses
+        RUSH windows can score more from that input.
+      </p>
+      <h3>Why there are three leaderboards</h3>
+      <ul>
+        <li><strong>Raw score</strong> rewards the overall run: pace, survival and multiplier management.</li>
+        <li><strong>Average speed</strong> rewards sustained intensity across active scrolling time.</li>
+        <li><strong>Maximum speed</strong> records the fastest burst observed during the run.</li>
+      </ul>
+      <p>
+        Keeping these categories separate avoids pretending that one number
+        describes every kind of skill.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">04</span><h2>THE 1.5-SECOND RULE</h2></div>
+    <div class="prose">
+      <p>
+        The core pressure mechanic is the inactivity timer. Every meaningful
+        input refreshes the run. Once the game has gone roughly 1.5 seconds
+        without meaningful scrolling, the run ends.
+      </p>
+      <p>
+        The danger bar is a direct visualization of that deadline. In the final
+        portion it turns red and the interface enters a panic state. Recovering
+        from that state before the deadline creates a CLUTCH SAVE callout, but it
+        does not secretly add score; it is feedback for a recovery the player
+        already made.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">05</span><h2>RUSH GATES & COMBOS</h2></div>
+    <div class="prose">
+      <p>
+        RUSH gates are short optional challenges that ask for a fixed amount of
+        downward input inside a limited window. Lower multipliers are deliberately
+        easier to complete. Larger rewards demand more input in less time.
+      </p>
+      <p>
+        Completing a gate activates its multiplier for a limited period. Missing
+        the gate resets the active RUSH multiplier and breaks the current RUSH
+        chain. The chain itself is mostly an arcade-feedback system; its milestone
+        callouts do not silently change the leaderboard rules.
+      </p>
+      <h3>Why the gate is three-dimensional</h3>
+      <p>
+        Earlier prototypes used glowing circles. They were readable but visually
+        disconnected from the speed fantasy. The current gate is staged inside a
+        projected corridor so it feels like a checkpoint approaching the player
+        rather than a flat UI popup.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">06</span><h2>RANKS, ZONES & VISUAL STAGES</h2></div>
+    <div class="prose">
+      <p>
+        D through SSS ranks are live feedback for current speed. They do not
+        replace the leaderboard stats. Higher ranks shake and distort more to
+        make speed feel unstable and earned.
+      </p>
+      <p>
+        Zones are score milestones that change the atmosphere of the run.
+        Separately, sustained high-speed stages can trigger larger audio/visual
+        moments. Those systems deliberately sit on top of the same underlying
+        score rather than creating separate hidden currencies.
+      </p>
+      <h3>PB Ghost</h3>
+      <p>
+        When you set a personal best, BeatMyScroll stores a lightweight timeline
+        of that best run in your browser. Future runs can compare the current
+        score with that old score at the same elapsed time. The PB Ghost is local
+        to your browser; it is not another public leaderboard record.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">07</span><h2>PERFORMANCE MODE</h2></div>
+    <div class="prose">
+      <p>
+        The game automatically reduces decorative rendering when a device reports
+        limited hardware or when frame timing shows that the full effect stack is
+        struggling. Lite Mode uses fewer tunnel elements, fewer projected
+        particles, simpler shadows and fewer expensive animations.
+      </p>
+      <p>
+        The important part is what Lite Mode <strong>does not</strong> change:
+        scoring, inactivity timing, speed thresholds, leaderboard values and RUSH
+        difficulty remain gameplay systems rather than graphics settings.
+      </p>
+      <a class="cta-button" href="/benchmark.html">SEE THE LIVE SPEED BENCHMARK →</a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div>BeatMyScroll mechanics documentation.</div>
+    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/benchmark.html">Benchmark</a><a href="/devlog.html">Dev Log</a></nav>
+  </footer>
+</main>
+</body>
+</html>
