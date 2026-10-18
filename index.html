@@ -189,6 +189,18 @@
         <p class="start-note">
           Once the run starts, keep scrolling. Stop for 1.5 seconds and it is over.
         </p>
+
+        <aside id="daily-challenge" class="daily-challenge">
+          <div>
+            <span>DAILY CHALLENGE</span>
+            <strong id="daily-challenge-title">LOADING TODAY'S OBJECTIVE…</strong>
+            <small id="daily-challenge-detail">A new objective rotates every day.</small>
+          </div>
+          <div class="daily-streak">
+            <span>STREAK</span>
+            <strong id="daily-challenge-streak">0</strong>
+          </div>
+        </aside>
       </header>
 
       <section class="landing-section" aria-labelledby="how-title">
@@ -383,9 +395,47 @@
         </div>
       </section>
 
-      <section class="landing-section faq-section" aria-labelledby="faq-title">
+      <section class="landing-section" aria-labelledby="explore-title">
         <div class="section-heading">
           <span>06</span>
+          <div>
+            <p class="section-kicker">BEYOND THE RUN</p>
+            <h2 id="explore-title">THE NUMBERS ARE PART OF THE GAME NOW.</h2>
+          </div>
+        </div>
+
+        <div class="explore-grid">
+          <a class="explore-card" href="stats.html">
+            <span>LIVE DATA</span>
+            <h3>Global Stats</h3>
+            <p>Submitted runs, registered competitors, world records, activity and live community speed thresholds.</p>
+          </a>
+          <a class="explore-card" href="records.html">
+            <span>TOP 50</span>
+            <h3>World Records</h3>
+            <p>Go deeper than the game-over Top 15 and browse score, average-speed and max-speed rankings.</p>
+          </a>
+          <a class="explore-card" href="benchmark.html">
+            <span>COMPARE</span>
+            <h3>Speed Benchmark</h3>
+            <p>Enter one of your results and see exactly where it falls against registered competitors.</p>
+          </a>
+          <a class="explore-card" href="how-it-works.html">
+            <span>MECHANICS</span>
+            <h3>How It Works</h3>
+            <p>What scrolls/s means, why scoring uses a normalized rate, how RUSH works and why scrollbar dragging does not score.</p>
+          </a>
+          <a class="explore-card" href="devlog.html">
+            <span>BUILDING IN PUBLIC</span>
+            <h3>Dev Log</h3>
+            <p>The actual history of the leaderboard, audio fixes, Lite Mode, PB Ghost, arcade ranks and projected 3D renderer.</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="landing-section faq-section" aria-labelledby="faq-title">
+        <div class="section-heading">
+          <span>07</span>
           <div>
             <p class="section-kicker">FAQ</p>
             <h2 id="faq-title">IMPORTANT SCIENCE</h2>
@@ -433,6 +483,11 @@
           <span>Built for competitive scrolling, questionable decisions and bragging rights.</span>
         </div>
         <nav aria-label="Footer navigation">
+          <a href="stats.html">Stats</a>
+          <a href="records.html">Records</a>
+          <a href="benchmark.html">Benchmark</a>
+          <a href="how-it-works.html">How It Works</a>
+          <a href="devlog.html">Dev Log</a>
           <a href="about.html">About</a>
           <a href="contact.html">Contact</a>
           <a href="privacy.html">Privacy</a>
@@ -568,6 +623,12 @@
     <div id="run-verdict" class="run-verdict">
       <span id="run-title">CERTIFIED SCROLLER</span>
       <small id="run-summary">Warm up and run it back.</small>
+    </div>
+
+    <div id="daily-result" class="daily-result" hidden>
+      <span>DAILY CHALLENGE</span>
+      <strong id="daily-result-title">OBJECTIVE CLEARED</strong>
+      <small id="daily-result-detail"></small>
     </div>
 
     <p id="new-best">
