@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BeatMyScroll development log: launch history, leaderboard, audio, performance work, arcade systems, 3D rendering and monetization changes." />
+  <link rel="canonical" href="https://beatmyscroll.com/devlog.html" />
+  <title>Dev Log | BeatMyScroll</title>
+  <link rel="stylesheet" href="content.css" />
+</head>
+<body>
+<main class="content-shell">
+  <nav class="content-nav" aria-label="Main navigation">
+    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <div class="content-nav-links">
+      <a href="/stats.html">Stats</a><a href="/records.html">Records</a>
+      <a href="/benchmark.html">Benchmark</a><a href="/how-it-works.html">How It Works</a>
+      <a href="/devlog.html" aria-current="page">Dev Log</a><a href="/about.html">About</a>
+    </div>
+  </nav>
+
+  <header class="content-hero">
+    <p class="content-kicker">BUILDING IN PUBLIC</p>
+    <h1>DEV<br><em>LOG.</em></h1>
+    <p class="content-deck">
+      BeatMyScroll started as a tiny “how long can you keep scrolling?” prototype.
+      This page documents the real changes that turned it into a competitive
+      browser game, including the experiments that were replaced when they did
+      not feel good enough.
+    </p>
+  </header>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">2026</span><h2>THE BUILD SO FAR</h2></div>
+    <div class="timeline">
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 17–18</div>
+        <div>
+          <h3>Live data becomes part of the site</h3>
+          <p>
+            Added public statistics, expanded records and a community benchmark
+            API derived from the existing opt-in leaderboard. The site now
+            separates “submitted leaderboard runs” from anonymous plays instead
+            of inventing a total-play count we do not collect.
+          </p>
+          <div class="tag-row"><span class="tag">STATS</span><span class="tag">BENCHMARKS</span><span class="tag">CONTENT</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 17</div>
+        <div>
+          <h3>The tunnel stops pretending to be 3D</h3>
+          <p>
+            The first corridor used CSS perspective and looked more like stacked
+            wireframe rectangles than a space the player occupied. It was
+            replaced with a projected canvas renderer that takes 3D coordinates,
+            projects them into screen space and moves corridor rings, particles
+            and a rotating wireframe object toward the camera.
+          </p>
+          <div class="tag-row"><span class="tag">3D</span><span class="tag">CANVAS</span><span class="tag">PERFORMANCE</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 17</div>
+        <div>
+          <h3>PB Ghost racing</h3>
+          <p>
+            Personal bests stopped being just one number. New PBs now save a
+            lightweight local score timeline. During the next run, the game can
+            show whether the current player is ahead of or behind the old run at
+            the same elapsed time, including a PB OVERTAKE moment.
+          </p>
+          <div class="tag-row"><span class="tag">REPLAY DATA</span><span class="tag">RIVAL SYSTEM</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 17</div>
+        <div>
+          <h3>Arcade feedback pass</h3>
+          <p>
+            Added D through SSS live ranks, score zones, CLUTCH SAVE feedback,
+            run grades, post-run titles and escalating RUSH streak callouts.
+            These systems were intentionally layered on top of the existing
+            scoring formula so old leaderboard results stayed comparable.
+          </p>
+          <div class="tag-row"><span class="tag">GAME FEEL</span><span class="tag">RANKS</span><span class="tag">RUSH</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 8</div>
+        <div>
+          <h3>Legacy-device performance mode</h3>
+          <p>
+            Older devices were struggling with filters, speed-line transforms,
+            eager media loading and high-frequency DOM updates. The game gained
+            lazy audio/media loading, adaptive rendering, HUD throttling, static
+            asset caching and a Lite Mode that can activate automatically when
+            frame timing drops.
+          </p>
+          <div class="tag-row"><span class="tag">OPTIMIZATION</span><span class="tag">LITE MODE</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 8</div>
+        <div>
+          <h3>AdSense rejection changes the homepage</h3>
+          <p>
+            An early monetization layout treated the start/results states too
+            much like ad-adjacent utility screens. Advertising was restricted to
+            the content-rich landing page, gameplay and game-over were made
+            completely ad-free, and the site gained real navigation, privacy,
+            legal and explanatory content.
+          </p>
+          <div class="tag-row"><span class="tag">MONETIZATION</span><span class="tag">UX</span><span class="tag">POLICY</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 7–8</div>
+        <div>
+          <h3>Global leaderboard</h3>
+          <p>
+            Added an opt-in username system backed by a Cloudflare Durable
+            Object. Each registered browser can maintain best raw score, best
+            average speed and best max speed, with separate Top 15 boards shown
+            after runs.
+          </p>
+          <div class="tag-row"><span class="tag">CLOUDFLARE</span><span class="tag">SQL</span><span class="tag">LEADERBOARD</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 7</div>
+        <div>
+          <h3>Audio stages and reliability work</h3>
+          <p>
+            Speed milestones gained music and visual moments. The first audio
+            implementation was unreliable on some phones because playback
+            permission could be lost between a gesture and asynchronous element
+            creation. Audio elements were moved to deterministic first-gesture
+            unlocking with retry logic and lazy loading for large tracks.
+          </p>
+          <div class="tag-row"><span class="tag">AUDIO</span><span class="tag">MOBILE</span></div>
+        </div>
+      </article>
+
+      <article class="timeline-entry">
+        <div class="timeline-date">OCT 6</div>
+        <div>
+          <h3>BeatMyScroll goes live</h3>
+          <p>
+            The original static prototype was connected to GitHub and deployed
+            through Cloudflare. The earliest version already had the core idea:
+            continuous input, an inactivity death timer, raw score and speed
+            acceleration. Everything since then has been built around making
+            that tiny loop feel worth replaying.
+          </p>
+          <div class="tag-row"><span class="tag">LAUNCH</span><span class="tag">GITHUB</span><span class="tag">CLOUDFLARE</span></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">NEXT</span><h2>WHAT STILL NEEDS WORK</h2></div>
+    <div class="prose">
+      <p>
+        The project is intentionally not “finished.” Device normalization can
+        always improve, the projected 3D scene still has room for stronger solid
+        geometry, and the community-data layer will become more informative as
+        more people choose to submit runs.
+      </p>
+      <p>
+        Changes that alter competitive scoring are treated more cautiously than
+        visual changes because maintaining comparability with existing records
+        matters. When a future mechanic genuinely changes scoring, it should be
+        versioned clearly rather than silently moving the goalposts.
+      </p>
+      <a class="cta-button" href="/contact.html">REPORT A BUG OR IDEA →</a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div>BeatMyScroll development history.</div>
+    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/how-it-works.html">How It Works</a><a href="/contact.html">Contact</a></nav>
+  </footer>
+</main>
+</body>
+</html>
