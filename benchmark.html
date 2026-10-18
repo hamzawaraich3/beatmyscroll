@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Benchmark your BeatMyScroll speed against registered competitors and see your estimated percentile." />
+  <link rel="canonical" href="https://beatmyscroll.com/benchmark.html" />
+  <title>Scroll Speed Benchmark | BeatMyScroll</title>
+  <link rel="stylesheet" href="content.css" />
+</head>
+<body>
+<main class="content-shell">
+  <nav class="content-nav" aria-label="Main navigation">
+    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <div class="content-nav-links">
+      <a href="/stats.html">Stats</a><a href="/records.html">Records</a>
+      <a href="/benchmark.html" aria-current="page">Benchmark</a><a href="/how-it-works.html">How It Works</a>
+      <a href="/devlog.html">Dev Log</a><a href="/about.html">About</a>
+    </div>
+  </nav>
+
+  <header class="content-hero">
+    <p class="content-kicker">COMMUNITY SPEED BENCHMARK</p>
+    <h1>HOW FAST<br><em>ARE YOU?</em></h1>
+    <p class="content-deck">
+      Compare a BeatMyScroll result against the best submitted results of
+      registered competitors. Enter an average or maximum speed and the live
+      backend will calculate where it falls in the current distribution.
+    </p>
+    <p class="data-note">
+      BeatMyScroll's “scrolls/s” is a normalized game unit, not a universal
+      hardware standard. It is useful for comparing BeatMyScroll runs, not for
+      claiming a mouse or phone produces a scientifically exact number of
+      physical wheel notches per second.
+    </p>
+  </header>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">01</span><h2>CHECK A SPEED</h2></div>
+    <div class="benchmark-tool panel">
+      <form id="benchmark-form" class="benchmark-form">
+        <label for="benchmark-metric">METRIC</label>
+        <select id="benchmark-metric">
+          <option value="average">Average speed</option>
+          <option value="maximum">Maximum speed</option>
+        </select>
+        <label for="benchmark-value" style="margin-top:18px">SCROLLS / SECOND</label>
+        <input id="benchmark-value" type="number" min="0" max="1000000" step="0.1" inputmode="decimal" placeholder="e.g. 24.5" required />
+        <button type="submit">COMPARE TO PLAYERS →</button>
+      </form>
+      <div class="benchmark-result">
+        <span>YOUR COMMUNITY PERCENTILE</span>
+        <strong id="benchmark-percentile">—</strong>
+        <p id="benchmark-copy">Enter one of your BeatMyScroll speed results to compare it with registered competitors.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">02</span><h2>LIVE SPEED TIERS</h2></div>
+    <p class="section-intro">
+      These are not arbitrary labels. The thresholds come from the current
+      distribution of registered players' best average-speed records.
+    </p>
+    <div class="panel" style="margin-top:26px">
+      <div class="panel-header"><span>BEST AVERAGE SPEED</span><span id="tier-count">LIVE</span></div>
+      <div class="panel-body benchmark-bars" id="tier-bars"><div class="loading">Loading benchmark tiers…</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">03</span><h2>HOW TO READ THE PERCENTILE</h2></div>
+    <div class="prose">
+      <p>
+        If your result is in the <strong>90th percentile</strong>, it is at or
+        above roughly 90% of the registered competitors included in that metric.
+        Another way to say it: you are around the top 10% of that comparison
+        group.
+      </p>
+      <p>
+        The comparison changes over time. As more players submit runs and
+        existing players improve their records, the threshold for a particular
+        percentile can move.
+      </p>
+      <h3>Average speed versus max speed</h3>
+      <p>
+        Average speed is the better endurance benchmark because it rewards
+        maintaining pace. Max speed is a burst benchmark: it tells you how high
+        your fastest observed peak climbed during the run. A player can rank
+        extremely well in one and much lower in the other.
+      </p>
+      <h3>Different devices</h3>
+      <p>
+        Mouse wheels, trackpads and touchscreens emit browser input differently.
+        BeatMyScroll normalizes that input for gameplay, but device design still
+        matters. The benchmark therefore describes performance <strong>inside
+        this game</strong>, not a laboratory measurement of your hardware.
+      </p>
+      <a class="cta-button" href="/">PLAY A RUN AND GET YOUR NUMBERS →</a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div>Percentiles are calculated live from registered leaderboard competitors.</div>
+    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/records.html">Records</a><a href="/how-it-works.html">How It Works</a></nav>
+  </footer>
+</main>
+<script src="benchmark.js" defer></script>
+</body>
+</html>
