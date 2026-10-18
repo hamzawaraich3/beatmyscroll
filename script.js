@@ -198,6 +198,13 @@ const finalSpeedDisplay = document.getElementById("final-speed");
 const finalComboDisplay = document.getElementById("final-combo");
 const finalBestDisplay = document.getElementById("final-best");
 const finalGradeDisplay = document.getElementById("final-grade");
+
+const dailyChallengeTitle = document.getElementById("daily-challenge-title");
+const dailyChallengeDetail = document.getElementById("daily-challenge-detail");
+const dailyChallengeStreak = document.getElementById("daily-challenge-streak");
+const dailyResult = document.getElementById("daily-result");
+const dailyResultTitle = document.getElementById("daily-result-title");
+const dailyResultDetail = document.getElementById("daily-result-detail");
 const runTitleDisplay = document.getElementById("run-title");
 const runSummaryDisplay = document.getElementById("run-summary");
 
@@ -2042,6 +2049,207 @@ function updateZone(roundedScore) {
   }
 }
 
+function getUtcDateKey(date) {
+  const d = date || new Date();
+
+  return [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, "0"),
+    String(d.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function hashDateKey(key) {
+  let hash = 2166136261;
+
+  for (let i = 0; i < key.length; i++) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function getDailyChallenge() {
+  const dateKey = getUtcDateKey();
+  const seed = hashDateKey(dateKey);
+
+  const types = [
+    {
+      metric: "score",
+      label: "SCORE ATTACK",
+      targets: [3000, 5000, 8000, 12000]
+    },
+    {
+      metric: "duration",
+      label: "ENDURANCE RUN",
+      targets: [15, 20, 25, 30]
+    },
+    {
+      metric: "avgSpeed",
+      label: "SUSTAINED SPEED",
+      targets: [12, 16, 20, 24]
+    },
+    {
+      metric: "maxSpeed",
+      label: "BURST SPEED",
+      targets: [24, 32, 40, 50]
+    }
+  ];
+
+  const type =
+    types[seed % types.length];
+
+  const target =
+    type.targets[
+      Math.floor(seed / 7) % type.targets.length
+    ];
+
+  let description = "";
+
+  if (type.metric === "score") {
+    description =
+      "Score " +
+      target.toLocaleString() +
+      "+ in one run.";
+  }
+
+  if (type.metric === "duration") {
+    description =
+      "Survive for " +
+      target +
+      "+ seconds.";
+  }
+
+  if (type.metric === "avgSpeed") {
+    description =
+      "Finish with " +
+      target +
+      "+ average scrolls/s.";
+  }
+
+  if (type.metric === "maxSpeed") {
+    description =
+      "Hit " +
+      target +
+      "+ max scrolls/s.";
+  }
+
+  return {
+    dateKey,
+    metric: type.metric,
+    label: type.label,
+    target,
+    description
+  };
+}
+
+function getYesterdayKey() {
+  const yesterday =
+    new Date(Date.now() - 86400000);
+
+  return getUtcDateKey(yesterday);
+}
+
+const dailyChallenge = getDailyChallenge();
+
+function renderDailyChallenge() {
+  if (!dailyChallengeTitle) return;
+
+  const completedToday =
+    localStorage.getItem("beatMyScrollDailyLast") ===
+    dailyChallenge.dateKey;
+
+  const streak =
+    Number(
+      localStorage.getItem("beatMyScrollDailyStreak")
+    ) || 0;
+
+  dailyChallengeTitle.textContent =
+    completedToday
+      ? "CLEARED · " + dailyChallenge.label
+      : dailyChallenge.label;
+
+  dailyChallengeDetail.textContent =
+    dailyChallenge.description +
+    (
+      completedToday
+        ? " Come back tomorrow for a new objective."
+        : ""
+    );
+
+  dailyChallengeStreak.textContent =
+    String(streak);
+}
+
+function evaluateDailyChallenge(run) {
+  let value = 0;
+
+  if (dailyChallenge.metric === "score") {
+    value = run.score;
+  }
+
+  if (dailyChallenge.metric === "duration") {
+    value = run.duration;
+  }
+
+  if (dailyChallenge.metric === "avgSpeed") {
+    value = run.avgSpeed;
+  }
+
+  if (dailyChallenge.metric === "maxSpeed") {
+    value = run.maxSpeed;
+  }
+
+  const cleared =
+    value >= dailyChallenge.target;
+
+  if (!cleared) {
+    return {
+      cleared: false,
+      streak:
+        Number(
+          localStorage.getItem("beatMyScrollDailyStreak")
+        ) || 0
+    };
+  }
+
+  const previousDate =
+    localStorage.getItem("beatMyScrollDailyLast");
+
+  let streak =
+    Number(
+      localStorage.getItem("beatMyScrollDailyStreak")
+    ) || 0;
+
+  if (previousDate !== dailyChallenge.dateKey) {
+    streak =
+      previousDate === getYesterdayKey()
+        ? streak + 1
+        : 1;
+
+    localStorage.setItem(
+      "beatMyScrollDailyLast",
+      dailyChallenge.dateKey
+    );
+
+    localStorage.setItem(
+      "beatMyScrollDailyStreak",
+      String(streak)
+    );
+  }
+
+  renderDailyChallenge();
+
+  return {
+    cleared: true,
+    streak
+  };
+}
+
+renderDailyChallenge();
+
+
 function getRunGrade(averageSpeed, seconds, combo) {
   const gradeScore =
     averageSpeed +
@@ -3880,6 +4088,28 @@ function endGame(now) {
   finalComboDisplay.textContent =
     formatCombo(maxCombo);
 
+  const dailyOutcome =
+    evaluateDailyChallenge({
+      score: roundedScore,
+      duration: runSeconds,
+      avgSpeed: averageSpeed,
+      maxSpeed
+    });
+
+  if (dailyOutcome.cleared) {
+    dailyResult.hidden = false;
+    dailyResultTitle.textContent =
+      "OBJECTIVE CLEARED";
+    dailyResultDetail.textContent =
+      dailyChallenge.description +
+      " Daily streak: " +
+      dailyOutcome.streak +
+      ".";
+  } else {
+    dailyResult.hidden = true;
+    dailyResultDetail.textContent = "";
+  }
+
   finalBestDisplay.textContent =
     scoreFormatter.format(personalBest);
 
@@ -4055,6 +4285,9 @@ function resetGame() {
   challengeTarget.classList.add("hidden");
 
   shareStatus.textContent = "";
+
+  dailyResult.hidden = true;
+  dailyResultDetail.textContent = "";
 
   grid.style.backgroundPosition =
     "0 0";
