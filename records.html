@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BeatMyScroll all-time records for raw score, sustained average scroll speed and maximum scroll speed." />
+  <link rel="canonical" href="https://beatmyscroll.com/records.html" />
+  <title>World Records | BeatMyScroll</title>
+  <link rel="stylesheet" href="content.css" />
+</head>
+<body>
+<main class="content-shell">
+  <nav class="content-nav" aria-label="Main navigation">
+    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <div class="content-nav-links">
+      <a href="/stats.html">Stats</a><a href="/records.html" aria-current="page">Records</a>
+      <a href="/benchmark.html">Benchmark</a><a href="/how-it-works.html">How It Works</a>
+      <a href="/devlog.html">Dev Log</a><a href="/about.html">About</a>
+    </div>
+  </nav>
+
+  <header class="content-hero">
+    <p class="content-kicker">ALL-TIME LEADERBOARD</p>
+    <h1>WORLD<br><em>RECORDS.</em></h1>
+    <p class="content-deck">
+      The Top 50 registered competitors in each category. Raw score rewards a
+      complete run, average speed rewards sustained pace, and maximum speed
+      rewards the fastest burst the game recorded.
+    </p>
+    <p class="data-note">
+      A player can hold different positions across the three boards. Rankings
+      use each registered competitor's best submitted result in that category.
+    </p>
+  </header>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">01</span><h2>CHOOSE YOUR POISON</h2></div>
+    <div class="record-tabs" role="tablist" aria-label="Record category">
+      <button class="record-tab active" type="button" data-records="score">RAW SCORE</button>
+      <button class="record-tab" type="button" data-records="average">AVG SPEED</button>
+      <button class="record-tab" type="button" data-records="maximum">MAX SPEED</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span id="records-heading">TOP 50 — RAW SCORE</span>
+        <span id="records-updated">LIVE</span>
+      </div>
+      <div class="panel-body">
+        <ol id="records-list" class="records-list">
+          <li class="loading">Loading worldwide records…</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">02</span><h2>THREE DIFFERENT SKILLS</h2></div>
+    <div class="prose">
+      <h3>Raw score</h3>
+      <p>
+        Raw score is the broadest measure of a run. It combines scroll input
+        with the game's speed multiplier and any active RUSH multiplier. A huge
+        score normally requires both pace and survival rather than one isolated
+        burst.
+      </p>
+      <h3>Average speed</h3>
+      <p>
+        Average speed rewards sustained intensity. The game totals normalized
+        scroll input across the active portion of the run and divides it by
+        active time. Brief spikes matter less here than staying fast.
+      </p>
+      <h3>Maximum speed</h3>
+      <p>
+        Maximum speed is the opposite: it preserves the highest instantaneous
+        scroll-rate burst the game observed. It is intentionally separate from
+        average speed so one extreme flick cannot masquerade as sustained pace.
+      </p>
+      <div class="callout">
+        <strong>Want context instead of rank?</strong>
+        Use the <a href="/benchmark.html">Benchmark</a> page to see what
+        percentile a speed falls into across registered competitors.
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div>Records update from the live BeatMyScroll leaderboard.</div>
+    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/benchmark.html">Benchmark</a><a href="/privacy.html">Privacy</a></nav>
+  </footer>
+</main>
+<script src="records.js" defer></script>
+</body>
+</html>
