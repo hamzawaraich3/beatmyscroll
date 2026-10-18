@@ -108,6 +108,17 @@
     <small id="pb-ghost-status">SET A PERSONAL BEST</small>
   </div>
 
+  <div id="overdrive-meter" class="overdrive-meter" aria-live="polite">
+    <div class="overdrive-heading">
+      <span>OVERDRIVE</span>
+      <strong id="overdrive-percent">0%</strong>
+    </div>
+    <div class="overdrive-track">
+      <div id="overdrive-fill" class="overdrive-fill"></div>
+    </div>
+    <small id="overdrive-status">HOLD 18+ /s TO CHARGE</small>
+  </div>
+
   <div id="moment-card" class="moment-card hidden" aria-live="polite">
     <img id="moment-image" alt="" />
     <div id="moment-label"></div>
@@ -629,6 +640,11 @@
       <span>DAILY CHALLENGE</span>
       <strong id="daily-result-title">OBJECTIVE CLEARED</strong>
       <small id="daily-result-detail"></small>
+    </div>
+
+    <div id="run-achievements" class="run-achievements" hidden>
+      <span class="run-achievements-label">RUN MEDALS</span>
+      <div id="run-achievements-list" class="run-achievements-list"></div>
     </div>
 
     <p id="new-best">
