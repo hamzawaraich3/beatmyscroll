@@ -7,6 +7,7 @@ const publicUser=query.get("user");
 let currentUsername=null;
 let currentProfile=C.loadLocal();
 let currentPercentile={total:0,percentile:0};
+let currentRenderedRating=null;
 let viewingPublic=Boolean(publicUser);
 
 function pointsFor(values,radius=92,cx=130,cy=130){
@@ -58,6 +59,7 @@ function render(username,profile,percentile){
   const scores=profile?.scores||C.scoresFromLocal(profile);
   const raw=profile?.raw||Object.fromEntries(C.ORDER.map(t=>[t,profile?.tests?.[t]?.raw||null]));
   const rating=profile?.rating||C.ratingFromScores(scores);
+  currentRenderedRating=rating;
 
   $("profile-name").textContent=username||"LOCAL PROFILE";
   $("profile-rating").textContent=rating.completed?rating.rating:"—";
@@ -259,10 +261,17 @@ document.querySelectorAll("[data-skill-board]").forEach(button=>{
 $("profile-share").addEventListener("click",async()=>{
   const status=$("profile-share-status");
   const username=currentUsername;
-  const url=username?"https://beatmyscroll.com/profile.html?user="+encodeURIComponent(username):location.href;
-  const scores=viewingPublic?null:C.scoresFromLocal(C.loadLocal());
-  const rating=scores?C.ratingFromScores(scores):null;
-  const text=username?(username+"'s BeatMyScroll mechanics profile"+(rating?.complete?" — BMS Rating "+rating.rating+" "+rating.skillClass:"")):"My BeatMyScroll mechanics profile";
+
+  if(!username){
+    status.textContent="Claim / sync your profile first to create a public share link.";
+    const localRating=C.ratingFromScores(C.scoresFromLocal(C.loadLocal()));
+    if(localRating.completed)$("profile-claim-dialog").showModal();
+    return;
+  }
+
+  const url="https://beatmyscroll.com/profile.html?user="+encodeURIComponent(username);
+  const rating=currentRenderedRating;
+  const text=username+"'s BeatMyScroll mechanics profile"+(rating?.complete?" — BMS Rating "+rating.rating+" "+rating.skillClass:"");
   try{
     if(navigator.share){await navigator.share({title:"BeatMyScroll BMS Profile",text,url});status.textContent="Shared.";return;}
   }catch(e){if(e.name==="AbortError")return;}
