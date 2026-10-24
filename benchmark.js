@@ -458,6 +458,7 @@ async function runPrecision(){
     }
 
     on(arena,"pointerdown",event=>{
+      if(!primaryPointer(event))return;
       if(!event.target.classList.contains("bench-target")){
         misses++;
       }
