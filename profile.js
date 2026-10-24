@@ -89,7 +89,30 @@ function render(username,profile,percentile){
   });
 
   buildRadar(scores);
-  $("profile-claim").style.display=viewingPublic||username?"none":"inline-block";
+  $("profile-claim").style.display=viewingPublic||username||!rating.completed?"none":"inline-block";
+}
+
+async function syncLocalImprovements(serverProfile){
+  const local=C.loadLocal();
+  const serverScores=serverProfile?.scores||{};
+  let latest=null;
+
+  for(const test of C.ORDER){
+    const entry=local.tests?.[test];
+    if(!entry)continue;
+
+    if(Number(entry.score||0)>Number(serverScores[test]||0)+.05){
+      const res=await fetch("/api/bms-submit",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({test,raw:entry.raw})
+      });
+
+      if(res.ok)latest=await res.json();
+    }
+  }
+
+  return latest;
 }
 
 async function getCurrent(){
@@ -98,8 +121,15 @@ async function getCurrent(){
     if(res.ok){
       const data=await res.json();
       currentUsername=data.username;
-      currentProfile=C.mergeServerProfile(data.profile);
-      currentPercentile=data.percentile||{total:0,percentile:0};
+
+      let synced=null;
+      if(currentUsername){
+        synced=await syncLocalImprovements(data.profile);
+      }
+
+      const sourceProfile=synced?.profile||data.profile;
+      currentProfile=C.mergeServerProfile(sourceProfile);
+      currentPercentile=synced?.percentile||data.percentile||{total:0,percentile:0};
       const localScores=C.scoresFromLocal(currentProfile);
       render(currentUsername,{scores:localScores,raw:Object.fromEntries(C.ORDER.map(t=>[t,currentProfile.tests?.[t]?.raw||null])),rating:C.ratingFromScores(localScores)},currentPercentile);
       return;
