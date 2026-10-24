@@ -1,733 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google AdSense site verification and ad loader -->
-  <script async
-    fetchpriority="low"
+  <script async fetchpriority="low"
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1419660429007795"
     crossorigin="anonymous"></script>
   <meta charset="UTF-8" />
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  />
-
-  <meta
-    name="description"
-    content="BeatMyScroll is a browser speed-and-endurance game. Measure your average and max scroll speed, hit RUSH combos, chase hyperspace, and compete for worldwide records."
-  />
-
-<meta property="og:title" content="Beat My Scroll" />
-
-<meta
-    property="og:description"
-    content="How fast can you scroll? Measure speed, build combos and chase a worldwide BeatMyScroll record."
-/>
-
-<meta
-    property="og:image"
-    content="https://beatmyscroll.com/beatmyscrollshareable.png"
-/>
-
-<meta
-    property="og:url"
-    content="https://beatmyscroll.com"
-/>
-
-<meta
-    property="og:type"
-    content="website"
-/>
-
-<meta
-    name="twitter:card"
-    content="summary_large_image"
-/>
-
-  <title>Beat My Scroll</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BeatMyScroll is a competitive browser mechanics benchmark for reaction time, flicks, tracking, target switching, precision and click speed." />
+  <meta property="og:title" content="BeatMyScroll — Competitive Mechanics Benchmark" />
+  <meta property="og:description" content="Test your reaction, aim, tracking, precision and raw mouse mechanics. Get a BMS Rating and compare with other players." />
+  <meta property="og:image" content="https://beatmyscroll.com/beatmyscrollshareable.png" />
+  <meta property="og:url" content="https://beatmyscroll.com/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="canonical" href="https://beatmyscroll.com/" />
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="ads.css" />
+  <title>BeatMyScroll — Competitive Mechanics Benchmark</title>
+  <link rel="stylesheet" href="hub.css" />
 </head>
+<body>
+  <div class="hub-noise" aria-hidden="true"></div>
 
-<body class="landing">
+  <header class="hub-nav">
+    <a class="hub-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <nav aria-label="Main navigation">
+      <a href="/benchmark.html">Benchmark</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/stats.html">Stats</a>
+      <a href="/records.html">Scroll Records</a>
+      <a href="/classic.html">Classic</a>
+      <a href="/devlog.html">Dev Log</a>
+    </nav>
+  </header>
 
-  <!-- MOVING BACKGROUND -->
-  <div id="scroll-world">
-    <div class="grid"></div>
-  </div>
-
-  <div id="hyperspace" aria-hidden="true"></div>
-  <div id="rgb-wash" aria-hidden="true"></div>
-  <div id="impact-flash" aria-hidden="true"></div>
-
-
-  <!-- TOP HUD -->
-  <div id="hud">
-
-    <div class="hud-block">
-      <span class="hud-label">SCORE</span>
-      <strong id="score">0</strong>
-    </div>
-
-    <div class="hud-block center-hud">
-      <span class="hud-label">TIME</span>
-      <strong id="timer">0.0s</strong>
-    </div>
-
-    <div class="hud-block right-hud">
-      <span class="hud-label">SPEED</span>
-      <strong id="speed-display">0.0 <small>scrolls/s</small></strong>
-    </div>
-
-  </div>
-
-  <div id="combo-hud">
-    COMBO <strong id="combo-display">×1</strong>
-    <span id="rush-chain">RUSH CHAIN 0</span>
-  </div>
-
-  <div id="arcade-rank" class="arcade-rank rank-d" aria-live="polite">
-    <span class="rank-label">RANK</span>
-    <strong id="rank-letter">D</strong>
-    <small id="rank-name">WARMING UP</small>
-  </div>
-
-  <div id="zone-banner" class="zone-banner" aria-live="polite">
-    <span id="zone-number">ZONE 1</span>
-    <strong id="zone-name">WARMUP</strong>
-  </div>
-
-  <div id="zone-sweep" class="zone-sweep" aria-hidden="true"></div>
-
-  <div id="pb-ghost" class="pb-ghost" aria-live="polite">
-    <span>PB GHOST</span>
-    <strong id="pb-ghost-delta">--</strong>
-    <small id="pb-ghost-status">SET A PERSONAL BEST</small>
-  </div>
-
-  <div id="overdrive-meter" class="overdrive-meter" aria-live="polite">
-    <div class="overdrive-heading">
-      <span>OVERDRIVE</span>
-      <strong id="overdrive-percent">0%</strong>
-    </div>
-    <div class="overdrive-track">
-      <div id="overdrive-fill" class="overdrive-fill"></div>
-    </div>
-    <small id="overdrive-status">HOLD 18+ /s TO CHARGE</small>
-  </div>
-
-  <div id="moment-card" class="moment-card hidden" aria-live="polite">
-    <img id="moment-image" alt="" />
-    <div id="moment-label"></div>
-  </div>
-
-  <!-- Two reserved advertising rails: never present while a run is active. -->
-  <aside id="ad-rails" class="ad-rails" aria-label="Advertisements">
-    <div id="ad-left" class="ad-rail ad-rail-left" aria-label="Advertisement">
-      <span class="ad-label">ADVERTISEMENT</span>
-      <div id="ad-left-slot" class="ad-slot">
-        <div class="ad-empty-state" aria-hidden="true">AD SPACE</div>
-      </div>
-    </div>
-    <div id="ad-right" class="ad-rail ad-rail-right" aria-label="Advertisement">
-      <span class="ad-label">ADVERTISEMENT</span>
-      <div id="ad-right-slot" class="ad-slot">
-        <div class="ad-empty-state" aria-hidden="true">AD SPACE</div>
-      </div>
-    </div>
-  </aside>
-
-  <button id="sound-toggle" class="sound-toggle" type="button">
-    SOUND: ON
-  </button>
-
-
-  <!-- PERSONAL BEST -->
-  <div id="best-display">
-    BEST:
-    <span id="best-score">0</span>
-  </div>
-
-
-  <!-- START / PUBLISHER CONTENT -->
-  <main id="start-screen" class="screen active">
-    <div class="landing-shell">
-
-      <nav class="landing-nav" aria-label="Main navigation">
-        <a class="landing-brand" href="/">BEAT<span>MY</span>SCROLL</a>
-        <div class="landing-nav-links">
-          <a href="#how-title">HOW IT WORKS</a>
-          <a href="stats.html">STATS</a>
-          <a href="records.html">RECORDS</a>
-          <a href="benchmark.html">BENCHMARK</a>
-          <a href="devlog.html">DEV LOG</a>
-          <a href="about.html">ABOUT</a>
-        </div>
-      </nav>
-
-      <header class="landing-hero">
-        <p class="eyebrow">
-          THE INTERNET'S MOST POINTLESS ENDURANCE TEST
-        </p>
-
+  <main>
+    <section class="hub-hero">
+      <div class="hub-hero-copy">
+        <p class="hub-eyebrow">BROWSER MECHANICS LAB // BUILD 2.0</p>
         <h1>
-          BEAT<br>
-          MY<br>
-          <span>SCROLL</span>
+          HOW GOOD ARE YOU<br>
+          AT <em>USING A MOUSE?</em>
         </h1>
-
-        <p class="landing-deck">
-          BeatMyScroll is a speed-and-endurance browser game built around one
-          question: how hard can you scroll before your hands give up?
-          Your run tracks raw score, average scroll speed, peak scroll speed
-          and combos in real time.
+        <p class="hub-deck">
+          Six tests built around the mechanics that matter in shooters:
+          reaction, flick acquisition, tracking, target switching, micro-precision
+          and click burst. Finish the suite and get one persistent BMS Rating.
         </p>
 
-        <div id="challenge-box" class="challenge-box hidden">
-          <p class="challenge-label">YOU'VE BEEN CHALLENGED</p>
-          <div id="challenge-score">0</div>
-          <p class="challenge-subtext">BEAT THIS SCORE</p>
-        </div>
-
-        <button id="start-button" class="start-button" type="button">
-          START THE RUN
-          <span>↓</span>
-        </button>
-
-        <p class="start-note">
-          Once the run starts, keep scrolling. Stop for 1.5 seconds and it is over.
-        </p>
-
-        <aside id="daily-challenge" class="daily-challenge">
-          <div>
-            <span>DAILY CHALLENGE</span>
-            <strong id="daily-challenge-title">LOADING TODAY'S OBJECTIVE…</strong>
-            <small id="daily-challenge-detail">A new objective rotates every day.</small>
-          </div>
-          <div class="daily-streak">
-            <span>STREAK</span>
-            <strong id="daily-challenge-streak">0</strong>
-          </div>
-        </aside>
-      </header>
-
-      <section class="landing-section" aria-labelledby="how-title">
-        <div class="section-heading">
-          <span>01</span>
-          <div>
-            <p class="section-kicker">HOW IT WORKS</p>
-            <h2 id="how-title">SCROLL. ACCELERATE. DON'T STOP.</h2>
-          </div>
-        </div>
-
-        <div class="info-grid info-grid-three">
-          <article class="info-card">
-            <span class="info-number">1</span>
-            <h3>Build speed</h3>
-            <p>
-              Every wheel movement or swipe feeds the speed meter. Faster,
-              denser input pushes your live scrolls-per-second higher and makes
-              the background stretch from a calm grid into full hyperspace.
-            </p>
-          </article>
-
-          <article class="info-card">
-            <span class="info-number">2</span>
-            <h3>Protect the run</h3>
-            <p>
-              The inactivity bar is always draining. If the game goes about
-              1.5 seconds without meaningful scrolling, the run ends immediately.
-              Speed matters, but surviving the slowdown matters too.
-            </p>
-          </article>
-
-          <article class="info-card">
-            <span class="info-number">3</span>
-            <h3>Chase a record</h3>
-            <p>
-              Your final result records raw score, average speed, maximum speed,
-              survival time and your biggest combo. Registered players can place
-              their best runs on the global Top 15 leaderboard.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="landing-section" aria-labelledby="score-title">
-        <div class="section-heading">
-          <span>02</span>
-          <div>
-            <p class="section-kicker">SCORING</p>
-            <h2 id="score-title">WHY FAST SCROLLING SCORES MORE</h2>
-          </div>
-        </div>
-
-        <div class="feature-split">
-          <div class="feature-copy">
-            <p>
-              BeatMyScroll does not reward distance alone. The scoring system
-              measures the intensity of your input and gradually increases the
-              value of each scroll as your pace rises. A player who maintains a
-              fast rhythm will outscore someone who covers the same distance in
-              slow bursts.
-            </p>
-            <p>
-              The live speed stat is shown in <strong>scrolls per second</strong>.
-              Average speed represents your pace across the active portion of the
-              run, while maximum speed captures your fastest burst. There is no
-              artificial display cap on max speed.
-            </p>
-          </div>
-
-          <div class="stat-explainer">
-            <div>
-              <span>RAW SCORE</span>
-              <strong>pace × distance × combo</strong>
-            </div>
-            <div>
-              <span>AVG SPEED</span>
-              <strong>your sustained scrolling pace</strong>
-            </div>
-            <div>
-              <span>MAX SPEED</span>
-              <strong>your fastest recorded burst</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="landing-section" aria-labelledby="rush-title">
-        <div class="section-heading">
-          <span>03</span>
-          <div>
-            <p class="section-kicker">RUSH TARGETS</p>
-            <h2 id="rush-title">COMBOS ARE OPTIONAL. GREED IS NOT.</h2>
-          </div>
-        </div>
-
-        <div class="feature-split reverse">
-          <div class="rush-scale" aria-label="Rush multiplier difficulty examples">
-            <span class="rush-chip easy">×1.2</span>
-            <span class="rush-chip easy">×1.3</span>
-            <span class="rush-chip medium">×1.5</span>
-            <span class="rush-chip hard">×2</span>
-            <span class="rush-chip brutal">×4</span>
-            <span class="rush-chip insane">×5</span>
-          </div>
-
-          <div class="feature-copy">
-            <p>
-              Neon RUSH circles appear during a run and ask for a quick downward
-              burst. Lower multipliers are forgiving and common; the biggest
-              boosts demand much faster input inside a shorter window.
-            </p>
-            <p>
-              Completing a RUSH activates that multiplier for a limited time.
-              Missing one can break your momentum, so the best players have to
-              decide whether a high-value target is worth attacking while the
-              inactivity timer is still counting down.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="landing-section" aria-labelledby="speed-title">
-        <div class="section-heading">
-          <span>04</span>
-          <div>
-            <p class="section-kicker">SPEED STAGES</p>
-            <h2 id="speed-title">THE GAME GETS WEIRDER WHEN YOU GET FASTER.</h2>
-          </div>
-        </div>
-
-        <div class="stage-grid">
-          <article>
-            <span class="stage-dot sonic-dot"></span>
-            <h3>FAST</h3>
-            <p>
-              Sustained speed wakes up the first visual stage. Lines stretch,
-              the screen brightens and the run starts feeling less like a web
-              page and more like a tunnel.
-            </p>
-          </article>
-          <article>
-            <span class="stage-dot power-dot"></span>
-            <h3>POWER UP</h3>
-            <p>
-              A major jump from ordinary speed into a serious burst triggers a
-              short transformation moment with impact flashes and a harder visual
-              hit.
-            </p>
-          </article>
-          <article>
-            <span class="stage-dot locked-dot"></span>
-            <h3>LOCKED IN</h3>
-            <p>
-              Hold elite speed long enough and the game changes again. The color
-              treatment shifts while the background becomes more aggressive.
-            </p>
-          </article>
-          <article>
-            <span class="stage-dot aura-dot"></span>
-            <h3>AURA MODE</h3>
-            <p>
-              Maintain extreme speed for an extended stretch and the final mode
-              takes over: RGB effects, stronger hyperspace and maximum visual
-              chaos until you slow down.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="landing-section" aria-labelledby="leader-title">
-        <div class="section-heading">
-          <span>05</span>
-          <div>
-            <p class="section-kicker">WORLDWIDE RECORDS</p>
-            <h2 id="leader-title">THREE LEADERBOARDS. ONE EXCUSE LESS.</h2>
-          </div>
-        </div>
-
-        <div class="feature-copy centered-copy">
-          <p>
-            After your first run you can optionally claim a username of up to
-            15 characters. Your best raw score, best average speed and best max
-            speed are tracked separately, so one player can dominate endurance
-            while another owns the fastest burst.
-          </p>
-          <p>
-            Only the Top 15 entries in each category are displayed. You never
-            need an account just to play, and submitting a leaderboard name is
-            optional.
-          </p>
-        </div>
-      </section>
-
-      <section class="landing-section" aria-labelledby="explore-title">
-        <div class="section-heading">
-          <span>06</span>
-          <div>
-            <p class="section-kicker">BEYOND THE RUN</p>
-            <h2 id="explore-title">THE NUMBERS ARE PART OF THE GAME NOW.</h2>
-          </div>
-        </div>
-
-        <div class="explore-grid">
-          <a class="explore-card" href="stats.html">
-            <span>LIVE DATA</span>
-            <h3>Global Stats</h3>
-            <p>Submitted runs, registered competitors, world records, activity and live community speed thresholds.</p>
+        <div class="hub-actions">
+          <a class="hub-cta primary" href="/benchmark.html?mode=full">
+            RUN FULL BENCHMARK
+            <span>6 TESTS · ~4 MIN</span>
           </a>
-          <a class="explore-card" href="records.html">
-            <span>TOP 50</span>
-            <h3>World Records</h3>
-            <p>Go deeper than the game-over Top 15 and browse score, average-speed and max-speed rankings.</p>
-          </a>
-          <a class="explore-card" href="benchmark.html">
-            <span>COMPARE</span>
-            <h3>Speed Benchmark</h3>
-            <p>Enter one of your results and see exactly where it falls against registered competitors.</p>
-          </a>
-          <a class="explore-card" href="how-it-works.html">
-            <span>MECHANICS</span>
-            <h3>How It Works</h3>
-            <p>What scrolls/s means, why scoring uses a normalized rate, how RUSH works and why scrollbar dragging does not score.</p>
-          </a>
-          <a class="explore-card" href="devlog.html">
-            <span>BUILDING IN PUBLIC</span>
-            <h3>Dev Log</h3>
-            <p>The actual history of the leaderboard, audio fixes, Lite Mode, PB Ghost, arcade ranks and projected 3D renderer.</p>
+          <a class="hub-cta" href="/classic.html">
+            PLAY CLASSIC SCROLL
+            <span>THE ORIGINAL EVENT</span>
           </a>
         </div>
-      </section>
 
-      <section class="landing-section faq-section" aria-labelledby="faq-title">
-        <div class="section-heading">
-          <span>07</span>
+        <div class="hero-signals" aria-label="Benchmark principles">
+          <span>NO INSTALL</span>
+          <span>RAW INPUT</span>
+          <span>SERVER-VERIFIED SCORING</span>
+          <span>MOUSE-FIRST</span>
+        </div>
+      </div>
+
+      <aside class="rating-terminal">
+        <div class="terminal-head">
+          <span>YOUR BMS PROFILE</span>
+          <i id="hub-sync-dot"></i>
+        </div>
+        <div class="terminal-rating">
+          <span>BMS RATING</span>
+          <strong id="hub-rating">—</strong>
+          <em id="hub-class">UNRANKED</em>
+        </div>
+        <div class="terminal-progress">
           <div>
-            <p class="section-kicker">FAQ</p>
-            <h2 id="faq-title">IMPORTANT SCIENCE</h2>
+            <span>SUITE</span>
+            <strong id="hub-complete">0 / 6</strong>
+          </div>
+          <div>
+            <span>OVERALL</span>
+            <strong id="hub-overall">—</strong>
           </div>
         </div>
+        <div class="terminal-bars" id="hub-skill-bars"></div>
+        <a href="/profile.html" class="terminal-link">OPEN FULL PROFILE →</a>
+      </aside>
+    </section>
 
-        <div class="faq-grid">
-          <article>
-            <h3>Is there actually a bottom?</h3>
-            <p>Find out.</p>
-          </article>
-          <article>
-            <h3>Does a mouse wheel count?</h3>
-            <p>Yes. Mouse wheels, trackpads and touch swipes all feed the game.</p>
-          </article>
-          <article>
-            <h3>Can I just drag the browser scrollbar?</h3>
-            <p>
-              No. The game scores actual wheel/touch input instead of page
-              position, so jumping a scrollbar does not create a massive score.
-            </p>
-          </article>
-          <article>
-            <h3>Why does the run end so quickly?</h3>
-            <p>
-              That is the challenge. Roughly 1.5 seconds without input ends the
-              run, forcing you to maintain rhythm instead of resting between bursts.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="landing-final-cta">
-        <p>YOU HAVE READ ENOUGH.</p>
-        <h2>NOW DESTROY YOUR SCROLL WHEEL.</h2>
-        <button id="start-button-bottom" class="start-button secondary-start" type="button">
-          PLAY BEATMYSCROLL
-          <span>↓</span>
-        </button>
-      </section>
-
-      <footer class="landing-footer">
+    <section class="hub-section">
+      <div class="hub-section-head">
         <div>
-          <strong>BeatMyScroll.com</strong>
-          <span>Built for competitive scrolling, questionable decisions and bragging rights.</span>
+          <span class="hub-section-kicker">THE SIX</span>
+          <h2>MECHANICS, NOT TRIVIA.</h2>
         </div>
-        <nav aria-label="Footer navigation">
-          <a href="stats.html">Stats</a>
-          <a href="records.html">Records</a>
-          <a href="benchmark.html">Benchmark</a>
-          <a href="how-it-works.html">How It Works</a>
-          <a href="devlog.html">Dev Log</a>
-          <a href="about.html">About</a>
-          <a href="contact.html">Contact</a>
-          <a href="privacy.html">Privacy</a>
-          <a href="terms.html">Terms</a>
-          <a href="disclaimer.html">Disclaimer</a>
-        </nav>
-      </footer>
-
-    </div>
-  </main>
-
-
-  <!-- GAME AREA -->
-  <main id="game-screen" class="screen">
-
-    <canvas id="depth-canvas" class="depth-canvas" aria-hidden="true"></canvas>
-
-    <div id="depth-tunnel" class="depth-tunnel" aria-hidden="true">
-      <div class="depth-ceiling"></div>
-      <div class="depth-floor"></div>
-
-      <div class="depth-rail rail-left"></div>
-      <div class="depth-rail rail-right"></div>
-      <div class="depth-rail rail-top-left"></div>
-      <div class="depth-rail rail-top-right"></div>
-
-      <div id="depth-stage" class="depth-stage"></div>
-      <div class="depth-vanishing-point"></div>
-    </div>
-
-    <div id="speed-lines"></div>
-
-    <div id="game-message">
-      KEEP SCROLLING
-    </div>
-
-    <div id="distance-marker">
-      0
-    </div>
-
-    <div id="challenge-target" class="challenge-target hidden">
-      TARGET <span id="challenge-target-score">0</span>
-    </div>
-
-    <div id="boost-target" class="boost-target rush-gate hidden" aria-hidden="true">
-      <div id="boost-approach" class="boost-approach rush-gate-frame"></div>
-
-      <div id="boost-core" class="boost-core rush-gate-panel">
-        <div class="rush-gate-header">RUSH GATE</div>
-
-        <div class="boost-copy">
-          <span>SWIPE / SCROLL ↓</span>
-          <em id="boost-reward">×1.2</em>
-          <strong id="boost-progress">0%</strong>
-        </div>
-
-        <div class="rush-gate-meter" aria-hidden="true">
-          <div class="rush-gate-meter-fill"></div>
-        </div>
-      </div>
-
-      <span class="rush-gate-depth depth-a"></span>
-      <span class="rush-gate-depth depth-b"></span>
-    </div>
-
-    <div id="boost-toast" class="boost-toast" aria-live="polite"></div>
-
-    <div id="danger-bar">
-      <div id="danger-fill"></div>
-    </div>
-
-    <div id="danger-text">
-      DON'T STOP
-    </div>
-
-  </main>
-
-
-  <!-- GAME OVER -->
-  <main id="game-over" class="screen">
-
-    <p class="eyebrow red">
-      YOU STOPPED SCROLLING
-    </p>
-
-    <h2>
-      GAME<br>
-      OVER
-    </h2>
-
-    <p class="score-label">
-      YOUR SCORE
-    </p>
-
-    <div id="final-score">
-      0
-    </div>
-
-    <div class="results">
-
-      <div class="result">
-        <span>TIME</span>
-        <strong id="final-time">0.0s</strong>
-      </div>
-
-      <div class="result">
-        <span>AVG SPEED</span>
-        <strong id="final-avg-speed">0.0/s</strong>
-      </div>
-
-      <div class="result">
-        <span>MAX SPEED</span>
-        <strong id="final-speed">0.0/s</strong>
-      </div>
-
-      <div class="result">
-        <span>MAX COMBO</span>
-        <strong id="final-combo">×1</strong>
-      </div>
-
-      <div class="result">
-        <span>BEST</span>
-        <strong id="final-best">0</strong>
-      </div>
-
-      <div class="result result-grade">
-        <span>RUN GRADE</span>
-        <strong id="final-grade">D</strong>
-      </div>
-
-    </div>
-
-    <div id="run-verdict" class="run-verdict">
-      <span id="run-title">CERTIFIED SCROLLER</span>
-      <small id="run-summary">Warm up and run it back.</small>
-    </div>
-
-    <div id="daily-result" class="daily-result" hidden>
-      <span>DAILY CHALLENGE</span>
-      <strong id="daily-result-title">OBJECTIVE CLEARED</strong>
-      <small id="daily-result-detail"></small>
-    </div>
-
-    <div id="run-achievements" class="run-achievements" hidden>
-      <span class="run-achievements-label">RUN MEDALS</span>
-      <div id="run-achievements-list" class="run-achievements-list"></div>
-    </div>
-
-    <p id="new-best">
-      NEW PERSONAL BEST
-    </p>
-
-    <div class="button-row">
-
-    <button id="retry-button" type="button">
-  TRY AGAIN
-</button>
-
-    <button
-  id="share-button"
-  class="secondary-button"
-  type="button"
->
-  SHARE SCORE
-</button>
-
-    </div>
-
-    <p id="share-status"></p>
-
-    <!-- GLOBAL LEADERBOARD -->
-    <section id="leaderboard-area" class="leaderboard-area" aria-label="Global leaderboard">
-      <form id="leaderboard-register" class="leaderboard-register" hidden>
-        <div class="leaderboard-register-heading">CLAIM YOUR SPOT</div>
-        <label for="leaderboard-username">One username. Three ways to dominate.</label>
-        <div class="leaderboard-form-row">
-          <input
-            id="leaderboard-username"
-            name="username"
-            type="text"
-            maxlength="15"
-            minlength="1"
-            pattern="[A-Za-z0-9_-]{1,15}"
-            autocomplete="nickname"
-            placeholder="Username (max 15)"
-            spellcheck="false"
-            required
-          />
-          <button id="leaderboard-submit" type="submit">SUBMIT SCORE</button>
-          <button id="leaderboard-skip" class="leaderboard-skip" type="button">NOT NOW</button>
-        </div>
-        <p class="leaderboard-hint">
-          Letters, numbers, _ and - only. After you register, your best scores update automatically on this browser.
+        <p>
+          Each event isolates a different part of shooter mechanics.
+          Your rating weights aim-heavy tests more than raw clicking.
         </p>
-      </form>
+      </div>
 
-      <p id="leaderboard-player" class="leaderboard-player" hidden></p>
-      <p id="leaderboard-feedback" class="leaderboard-feedback" role="status" aria-live="polite"></p>
+      <div class="test-grid">
+        <a class="test-card reaction" href="/benchmark.html?test=reaction">
+          <span class="test-num">01</span>
+          <div class="test-icon">⚡</div>
+          <h3>Reaction</h3>
+          <p>Five visual reaction trials. Median response wins.</p>
+          <div class="test-meta"><span>20% RATING</span><strong id="hub-best-reaction">NOT TESTED</strong></div>
+        </a>
 
-      <div class="leaderboard-card">
-        <div class="leaderboard-header">
-          <div>
-            <p class="leaderboard-kicker">WORLDWIDE RECORDS</p>
-            <h3>THE LEADERBOARD <span>⚡</span></h3>
-          </div>
-          <span class="leaderboard-top-count">TOP 15</span>
-        </div>
+        <a class="test-card flick" href="/benchmark.html?test=flick">
+          <span class="test-num">02</span>
+          <div class="test-icon">＋</div>
+          <h3>Flick Acquisition</h3>
+          <p>Acquire sequential targets quickly without throwing accuracy away.</p>
+          <div class="test-meta"><span>25% RATING</span><strong id="hub-best-flick">NOT TESTED</strong></div>
+        </a>
 
-        <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard categories">
-          <button class="leaderboard-tab is-active" type="button" role="tab" aria-selected="true" data-leaderboard="score">RAW SCORE</button>
-          <button class="leaderboard-tab" type="button" role="tab" aria-selected="false" data-leaderboard="average">AVG SPEED</button>
-          <button class="leaderboard-tab" type="button" role="tab" aria-selected="false" data-leaderboard="maximum">MAX SPEED</button>
-        </div>
+        <a class="test-card tracking" href="/benchmark.html?test=tracking">
+          <span class="test-num">03</span>
+          <div class="test-icon">◎</div>
+          <h3>Tracking</h3>
+          <p>Stay on a moving target while it changes direction and velocity.</p>
+          <div class="test-meta"><span>20% RATING</span><strong id="hub-best-tracking">NOT TESTED</strong></div>
+        </a>
 
-        <ol id="leaderboard-list" class="leaderboard-list" aria-live="polite">
-          <li class="leaderboard-placeholder">Loading worldwide scores…</li>
-        </ol>
+        <a class="test-card switching" href="/benchmark.html?test=switching">
+          <span class="test-num">04</span>
+          <div class="test-icon">⇄</div>
+          <h3>Target Switching</h3>
+          <p>Recognize, acquire and transfer between threats at speed.</p>
+          <div class="test-meta"><span>15% RATING</span><strong id="hub-best-switching">NOT TESTED</strong></div>
+        </a>
 
-        <p class="leaderboard-footnote">Best result per player in each category · updated after every submitted run</p>
+        <a class="test-card precision" href="/benchmark.html?test=precision">
+          <span class="test-num">05</span>
+          <div class="test-icon">⊙</div>
+          <h3>Micro Precision</h3>
+          <p>Small targets punish edge hits. Center control matters.</p>
+          <div class="test-meta"><span>15% RATING</span><strong id="hub-best-precision">NOT TESTED</strong></div>
+        </a>
+
+        <a class="test-card click" href="/benchmark.html?test=click">
+          <span class="test-num">06</span>
+          <div class="test-icon">⌁</div>
+          <h3>Click Burst</h3>
+          <p>Five seconds. Pure click cadence. No aim excuses.</p>
+          <div class="test-meta"><span>5% RATING</span><strong id="hub-best-click">NOT TESTED</strong></div>
+        </a>
       </div>
     </section>
 
+    <section class="hub-section profile-explainer">
+      <div class="hub-section-head">
+        <div>
+          <span class="hub-section-kicker">ONE NUMBER, SIX AXES</span>
+          <h2>THE BMS RATING.</h2>
+        </div>
+      </div>
+      <div class="rating-layout">
+        <div class="rating-copy">
+          <p>
+            A single flashy test should not define your mechanics. BMS Rating combines
+            all six normalized scores, with heavier weight on flicks, reaction and tracking.
+            Complete profiles range from Recruit through Demon.
+          </p>
+          <p>
+            The browser records raw test measurements. When you sync a result, the
+            Cloudflare backend recalculates the normalized score instead of trusting
+            a score sent by the browser.
+          </p>
+          <a href="/how-it-works.html" class="text-link">READ THE SCORING MODEL →</a>
+        </div>
+        <div class="rank-ladder" aria-label="BMS rating classes">
+          <span data-rank="recruit">RECRUIT <b>&lt;600</b></span>
+          <span data-rank="bronze">BRONZE <b>600+</b></span>
+          <span data-rank="silver">SILVER <b>800+</b></span>
+          <span data-rank="gold">GOLD <b>1000+</b></span>
+          <span data-rank="platinum">PLATINUM <b>1200+</b></span>
+          <span data-rank="diamond">DIAMOND <b>1400+</b></span>
+          <span data-rank="ascendant">ASCENDANT <b>1600+</b></span>
+          <span data-rank="immortal">IMMORTAL <b>1800+</b></span>
+          <span data-rank="demon">DEMON <b>1950+</b></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="hub-section leaderboard-preview">
+      <div class="hub-section-head">
+        <div>
+          <span class="hub-section-kicker">GLOBAL</span>
+          <h2>TOP MECHANICS.</h2>
+        </div>
+        <a href="/profile.html#leaderboard" class="text-link">FULL BMS LEADERBOARD →</a>
+      </div>
+      <div id="hub-leaderboard" class="hub-leaderboard">
+        <div class="hub-loading">Waiting for complete benchmark profiles…</div>
+      </div>
+    </section>
+
+    <section class="hub-section classic-strip">
+      <div>
+        <span class="hub-section-kicker">LEGACY EVENT // STILL UNHINGED</span>
+        <h2>CLASSIC SCROLL ISN'T DEAD.</h2>
+        <p>
+          The original endurance game now lives as its own event. Scroll speed and
+          Classic leaderboards remain separate from the shooter-oriented BMS Rating.
+        </p>
+      </div>
+      <a class="hub-cta primary" href="/classic.html">ENTER CLASSIC →</a>
+    </section>
   </main>
 
+  <footer class="hub-footer">
+    <div>
+      <strong>BEATMYSCROLL</strong>
+      <span>Competitive browser mechanics benchmark.</span>
+    </div>
+    <nav>
+      <a href="/benchmark.html">Benchmark</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/stats.html">Stats</a>
+      <a href="/how-it-works.html">How It Works</a>
+      <a href="/devlog.html">Dev Log</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </footer>
 
-  <script src="script.js"></script>
-  <script src="leaderboard.js"></script>
-  <script src="ads-config.js"></script>
-  <script src="ads.js"></script>
-
+  <script src="hub.js" defer></script>
 </body>
 </html>
