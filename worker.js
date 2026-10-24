@@ -298,7 +298,7 @@ function parseBmsTest(data) {
 
   return {
     test,
-    score: Math.round(score * 10) / 10,
+    score: Math.max(0.1, Math.round(score * 10) / 10),
     raw: cleanRaw
   };
 }
@@ -390,7 +390,7 @@ export class LeaderboardStore extends DurableObject {
       throw new Error("Invalid leaderboard metric");
     }
 
-    const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+    const safeLimit = Math.max(1, Math.min(10000, Math.floor(limit)));
 
     return this.sql.exec(
       `SELECT username, ${field} AS value, runs, updated_at
