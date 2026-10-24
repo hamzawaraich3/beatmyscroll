@@ -98,6 +98,9 @@ function sleep(ms){
     addCleanup(()=>clearTimeout(id));
   });
 }
+function primaryPointer(event){
+  return event.pointerType!=="mouse"||event.button===0;
+}
 function median(values){
   const arr=[...values].sort((a,b)=>a-b);
   const m=Math.floor(arr.length/2);
@@ -246,6 +249,7 @@ function runReaction(){
     }
 
     on(surface,"pointerdown",event=>{
+      if(!primaryPointer(event))return;
       event.preventDefault();
       if(state==="waiting"){
         clearTimer();
@@ -291,6 +295,7 @@ async function runFlick(){
       target.style.left=x+"px";target.style.top=y+"px";
       target.setAttribute("aria-label","Aim target");
       target.addEventListener("pointerdown",event=>{
+        if(!primaryPointer(event))return;
         event.preventDefault();event.stopPropagation();
         hits++;target.remove();
         hud.left.innerHTML="TARGET <strong>"+Math.min(total,hits+1)+" / "+total+"</strong>";
@@ -304,6 +309,7 @@ async function runFlick(){
     }
 
     on(arena,"pointerdown",event=>{
+      if(!primaryPointer(event))return;
       if(!event.target.classList.contains("bench-target")){
         misses++;
         hud.right.innerHTML="MISSES <strong>"+misses+"</strong>";
@@ -375,6 +381,7 @@ async function runSwitching(){
       node.type="button";node.className="switch-node";
       node.style.left=pos[0]+"%";node.style.top=pos[1]+"%";
       node.addEventListener("pointerdown",event=>{
+        if(!primaryPointer(event))return;
         event.preventDefault();event.stopPropagation();
         if(index!==active){
           misses++;hud.right.innerHTML="MISSES <strong>"+misses+"</strong>";return;
@@ -400,6 +407,7 @@ async function runSwitching(){
     }
 
     on(arena,"pointerdown",event=>{
+      if(!primaryPointer(event))return;
       if(!event.target.classList.contains("switch-node")){
         misses++;hud.right.innerHTML="MISSES <strong>"+misses+"</strong>";
       }
@@ -427,6 +435,7 @@ async function runPrecision(){
       target.style.width=target.style.height=(radius*2)+"px";
       target.style.left=x+"px";target.style.top=y+"px";
       target.addEventListener("pointerdown",event=>{
+        if(!primaryPointer(event))return;
         event.preventDefault();event.stopPropagation();
         const r=target.getBoundingClientRect();
         const cx=r.left+r.width/2,cy=r.top+r.height/2;
@@ -472,6 +481,7 @@ async function runClick(){
     const started=performance.now();
 
     on(pad,"pointerdown",event=>{
+      if(!primaryPointer(event))return;
       event.preventDefault();
       clicks++;countEl.textContent=clicks;
       const elapsed=Math.max(.1,(performance.now()-started)/1000);
@@ -648,6 +658,19 @@ fetch("/api/bms-profile",{cache:"no-store"})
   showProfile();
 })
 .catch(()=>{});
+
+document.addEventListener("visibilitychange",()=>{
+  if(
+    document.hidden &&
+    !runner.classList.contains("hidden") &&
+    !arena.classList.contains("hidden")
+  ){
+    cleanupActive();
+    runnerProgress.textContent="FOCUS LOST";
+    showIntro(currentTest);
+    runnerInstructions.textContent="Test aborted because the tab lost focus. Restart when ready.";
+  }
+});
 
 const params=new URLSearchParams(location.search);
 const requested=params.get("test");
