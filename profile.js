@@ -179,6 +179,47 @@ async function loadBoard(){
   }
 }
 
+let activeSkillBoard="reaction";
+
+async function loadSkillBoard(test){
+  activeSkillBoard=test;
+  const body=$("skill-board-body");
+  body.innerHTML='<div class="board-loading">Loading '+C.TESTS[test].name+' records…</div>';
+
+  try{
+    const res=await fetch(
+      "/api/bms-skill-leaderboard?test="+encodeURIComponent(test)+"&limit=50",
+      {cache:"no-store"}
+    );
+
+    if(!res.ok)throw new Error();
+
+    const data=await res.json();
+    const rows=Array.isArray(data.leaderboard)?data.leaderboard:[];
+    body.replaceChildren();
+
+    if(!rows.length){
+      const empty=document.createElement("div");
+      empty.className="board-loading";
+      empty.textContent="No synced "+C.TESTS[test].name+" results yet.";
+      body.appendChild(empty);
+      return;
+    }
+
+    rows.forEach((row,i)=>{
+      const el=document.createElement("div");
+      el.className="skill-board-row";
+      const rank=document.createElement("span");rank.className="rank";rank.textContent="#"+String(i+1).padStart(2,"0");
+      const player=document.createElement("a");player.className="player";player.href="/profile.html?user="+encodeURIComponent(row.username);player.textContent=row.username;
+      const score=document.createElement("strong");score.className="score";score.textContent=Number(row.score).toFixed(1);
+      const raw=document.createElement("span");raw.className="raw";raw.textContent=C.formatRaw(test,row.raw);
+      el.append(rank,player,score,raw);body.appendChild(el);
+    });
+  }catch(e){
+    body.innerHTML='<div class="board-loading">Event records are temporarily unavailable.</div>';
+  }
+}
+
 async function syncAll(name){
   const local=C.loadLocal();
   let first=true;
@@ -208,6 +249,13 @@ $("profile-claim-form").addEventListener("submit",async e=>{
   }catch(err){$("profile-claim-error").textContent=err.message||"Could not sync profile.";}
 });
 
+document.querySelectorAll("[data-skill-board]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll("[data-skill-board]").forEach(item=>item.classList.toggle("active",item===button));
+    loadSkillBoard(button.dataset.skillBoard);
+  });
+});
+
 $("profile-share").addEventListener("click",async()=>{
   const status=$("profile-share-status");
   const username=currentUsername;
@@ -223,4 +271,5 @@ $("profile-share").addEventListener("click",async()=>{
 
 if(viewingPublic)await getPublic(publicUser);else await getCurrent();
 await loadBoard();
+await loadSkillBoard(activeSkillBoard);
 });
