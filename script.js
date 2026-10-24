@@ -4655,7 +4655,7 @@ shareButton.addEventListener(
       (finalElapsed / 1000).toFixed(1);
 
     const shareUrl =
-      "https://beatmyscroll.com/?score=" +
+      "https://beatmyscroll.com/classic.html?score=" +
       roundedScore;
 
     const shareText =
