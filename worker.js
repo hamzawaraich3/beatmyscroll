@@ -693,6 +693,9 @@ export class LeaderboardStore extends DurableObject {
         (classes[key] || 0) + 1;
     }
 
+    const topProfile =
+      this.getBenchmarkLeaderboard(1)[0] || null;
+
     return {
       profiles: profiles.length,
       completeProfiles: complete.length,
@@ -702,6 +705,7 @@ export class LeaderboardStore extends DurableObject {
             sum + Number(profile.submissions || 0),
           0
         ),
+      topProfile,
       averageRating:
         Math.round(
           average(
