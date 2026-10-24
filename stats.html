@@ -3,107 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Live BeatMyScroll community statistics: submitted runs, competitors, records, activity and speed benchmarks." />
+  <meta name="description" content="Live BeatMyScroll community statistics for the BMS mechanics benchmark and Classic Scroll leaderboards." />
   <link rel="canonical" href="https://beatmyscroll.com/stats.html" />
-  <title>Global Stats | BeatMyScroll</title>
+  <title>Community Stats | BeatMyScroll</title>
   <link rel="stylesheet" href="content.css" />
 </head>
 <body>
-  <main class="content-shell">
-    <nav class="content-nav" aria-label="Main navigation">
-      <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
-      <div class="content-nav-links">
-        <a href="/stats.html" aria-current="page">Stats</a>
-        <a href="/records.html">Records</a>
-        <a href="/benchmark.html">Benchmark</a>
-        <a href="/how-it-works.html">How It Works</a>
-        <a href="/devlog.html">Dev Log</a>
-        <a href="/about.html">About</a>
-      </div>
-    </nav>
+<main class="content-shell">
+  <nav class="content-nav" aria-label="Main navigation">
+    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <div class="content-nav-links">
+      <a href="/benchmark.html">Benchmark</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/stats.html" aria-current="page">Stats</a>
+      <a href="/how-it-works.html">Methodology</a>
+      <a href="/classic.html">Classic</a>
+      <a href="/devlog.html">Dev Log</a>
+    </div>
+  </nav>
 
-    <header class="content-hero">
-      <p class="content-kicker">LIVE COMMUNITY DATA</p>
-      <h1>GLOBAL<br><em>STATS.</em></h1>
-      <p class="content-deck">
-        A live look at the players who have chosen to submit runs to the
-        BeatMyScroll leaderboard: how many runs they have posted, how fast their
-        personal records are, and where the current world records sit.
-      </p>
-      <p class="data-note">
-        <strong>Scope matters:</strong> these figures describe registered
-        leaderboard competitors and submitted leaderboard runs. BeatMyScroll
-        does not pretend this is every anonymous play of the game.
-      </p>
-    </header>
+  <header class="content-hero">
+    <p class="content-kicker">LIVE COMMUNITY DATA</p>
+    <h1>BMS<br><em>STATS.</em></h1>
+    <p class="content-deck">
+      Two systems now live under BeatMyScroll: the shooter-oriented mechanics
+      benchmark and the original Classic Scroll event. Their numbers stay
+      separate so each leaderboard keeps a clear meaning.
+    </p>
+    <p class="data-note">
+      <strong>Scope:</strong> these figures come from people who choose to sync
+      a username/profile or submit Classic runs. Anonymous visits are not counted
+      as leaderboard competitors.
+    </p>
+  </header>
 
-    <section class="section">
-      <div class="section-heading">
-        <span class="section-index">01</span>
-        <h2>THE COMMUNITY RIGHT NOW</h2>
-      </div>
-      <div class="stat-grid">
-        <article class="stat-card"><span>Registered competitors</span><strong id="stat-players">—</strong><small>Players with at least one submitted run.</small></article>
-        <article class="stat-card"><span>Submitted runs</span><strong id="stat-runs">—</strong><small>Total leaderboard runs posted by registered players.</small></article>
-        <article class="stat-card"><span>Active last 7 days</span><strong id="stat-active">—</strong><small>Competitors who updated a record or submitted a run recently.</small></article>
-        <article class="stat-card"><span>New last 30 days</span><strong id="stat-new">—</strong><small>New leaderboard identities created in the last month.</small></article>
-      </div>
-    </section>
+  <section class="section">
+    <div class="section-heading"><span class="section-index">01</span><h2>MECHANICS LAB.</h2></div>
+    <p class="section-intro">Live BMS benchmark population data across reaction, flicks, tracking, switching, precision and click burst.</p>
+    <div class="stat-grid" style="margin-top:26px">
+      <article class="stat-card"><span>Benchmark profiles</span><strong id="mech-profiles">—</strong><small>Players with at least one synced mechanics test.</small></article>
+      <article class="stat-card"><span>Complete profiles</span><strong id="mech-complete">—</strong><small>Players eligible for the global BMS Rating leaderboard.</small></article>
+      <article class="stat-card"><span>Test submissions</span><strong id="mech-submissions">—</strong><small>Synced mechanics attempts across all six events.</small></article>
+      <article class="stat-card"><span>Average BMS rating</span><strong id="mech-rating">—</strong><small>Average among complete six-test profiles.</small></article>
+    </div>
+  </section>
 
-    <section class="section">
-      <div class="section-heading">
-        <span class="section-index">02</span>
-        <h2>CURRENT WORLD RECORDS</h2>
-      </div>
-      <p class="section-intro">Three different leaderboards reward three different styles: total score, sustained average speed and the single fastest burst.</p>
-      <div class="stat-grid" style="margin-top:26px">
-        <article class="stat-card record-card"><span>Raw score record</span><strong id="record-score">—</strong><small id="record-score-name">Waiting for live data…</small></article>
-        <article class="stat-card record-card"><span>Average speed record</span><strong id="record-average">—</strong><small id="record-average-name">Waiting for live data…</small></article>
-        <article class="stat-card record-card"><span>Max speed record</span><strong id="record-maximum">—</strong><small id="record-maximum-name">Waiting for live data…</small></article>
-        <article class="stat-card"><span>Average submitted runs / player</span><strong id="stat-runs-player">—</strong><small>How often registered competitors come back and post another attempt.</small></article>
-      </div>
-    </section>
+  <section class="section">
+    <div class="section-heading"><span class="section-index">02</span><h2>AVERAGE SKILL PROFILE.</h2></div>
+    <div class="panel">
+      <div class="panel-header"><span>AVERAGE NORMALIZED SCORE</span><span>0–100</span></div>
+      <div class="panel-body benchmark-bars" id="mechanics-bars"><div class="loading">Loading mechanics averages…</div></div>
+    </div>
+    <div class="stat-grid" style="margin-top:18px">
+      <article class="stat-card record-card"><span>Current #1 BMS profile</span><strong id="mech-top-rating">—</strong><small id="mech-top-name">Waiting for complete profiles…</small></article>
+      <article class="stat-card"><span>Average overall skill</span><strong id="mech-overall">—</strong><small>Weighted six-axis overall among complete profiles.</small></article>
+    </div>
+  </section>
 
-    <section class="section">
-      <div class="section-heading">
-        <span class="section-index">03</span>
-        <h2>WHAT DOES “FAST” ACTUALLY MEAN?</h2>
-      </div>
-      <p class="section-intro">
-        These thresholds are calculated from each registered competitor's best
-        average-speed result. They update as the community gets faster.
-      </p>
-      <div class="panel" style="margin-top:26px">
-        <div class="panel-header"><span>BEST AVERAGE SPEED DISTRIBUTION</span><span id="benchmark-count">LIVE</span></div>
-        <div class="panel-body benchmark-bars" id="benchmark-bars">
-          <div class="loading">Loading live percentile thresholds…</div>
-        </div>
-      </div>
-      <a class="cta-button" href="/benchmark.html">BENCHMARK YOUR OWN SPEED →</a>
-    </section>
+  <section class="section">
+    <div class="section-heading"><span class="section-index">03</span><h2>CLASSIC SCROLL.</h2></div>
+    <p class="section-intro">The original game keeps its own competitors, submitted runs and speed records.</p>
+    <div class="stat-grid" style="margin-top:26px">
+      <article class="stat-card"><span>Classic competitors</span><strong id="stat-players">—</strong><small>Players with at least one submitted Classic run.</small></article>
+      <article class="stat-card"><span>Classic submitted runs</span><strong id="stat-runs">—</strong><small>Total registered Classic leaderboard attempts.</small></article>
+      <article class="stat-card"><span>Active last 7 days</span><strong id="stat-active">—</strong><small>Classic competitors who updated a run recently.</small></article>
+      <article class="stat-card"><span>Avg runs / competitor</span><strong id="stat-runs-player">—</strong><small>Repeat attempts among registered Classic players.</small></article>
+    </div>
+  </section>
 
-    <section class="section">
-      <div class="section-heading">
-        <span class="section-index">04</span>
-        <h2>AVERAGE PLAYER RECORDS</h2>
-      </div>
-      <p class="section-intro">
-        Unlike the world records above, these numbers average every registered
-        player's personal best. They give a better picture of the typical
-        competitor instead of the fastest person on the site.
-      </p>
-      <div class="stat-grid" style="margin-top:26px">
-        <article class="stat-card"><span>Average best score</span><strong id="avg-best-score">—</strong></article>
-        <article class="stat-card"><span>Average best sustained speed</span><strong id="avg-best-average">—</strong></article>
-        <article class="stat-card"><span>Average best max speed</span><strong id="avg-best-maximum">—</strong></article>
-      </div>
-    </section>
+  <section class="section">
+    <div class="section-heading"><span class="section-index">04</span><h2>CLASSIC WORLD RECORDS.</h2></div>
+    <div class="stat-grid">
+      <article class="stat-card record-card"><span>Raw score</span><strong id="record-score">—</strong><small id="record-score-name">—</small></article>
+      <article class="stat-card record-card"><span>Average scroll speed</span><strong id="record-average">—</strong><small id="record-average-name">—</small></article>
+      <article class="stat-card record-card"><span>Max scroll speed</span><strong id="record-maximum">—</strong><small id="record-maximum-name">—</small></article>
+    </div>
+    <a class="cta-button" href="/records.html">VIEW CLASSIC TOP 50 →</a>
+  </section>
 
-    <footer class="site-footer">
-      <div>BeatMyScroll data updates from the live leaderboard backend.</div>
-      <nav><a href="/">Play</a><a href="/records.html">Records</a><a href="/benchmark.html">Benchmark</a><a href="/privacy.html">Privacy</a><a href="/contact.html">Contact</a></nav>
-    </footer>
-  </main>
-  <script src="stats.js" defer></script>
+  <footer class="site-footer">
+    <div>BeatMyScroll live community statistics.</div>
+    <nav><a href="/">Home</a><a href="/benchmark.html">Benchmark</a><a href="/profile.html">Profile</a><a href="/classic.html">Classic</a><a href="/privacy.html">Privacy</a></nav>
+  </footer>
+</main>
+<script src="stats.js" defer></script>
 </body>
 </html>
