@@ -55,7 +55,7 @@ function scoreTest(test,raw){
     score=clamp(precision*.78+speed*.22);
   }
 
-  return Math.round(score*10)/10;
+  return Math.max(0.1,Math.round(score*10)/10);
 }
 
 function ratingFromScores(scores){
