@@ -513,6 +513,8 @@ export class LeaderboardStore extends DurableObject {
         averageSpeed: this.getQuantiles("best_avg_speed"),
         maxSpeed: this.getQuantiles("best_max_speed")
       },
+      mechanics:
+        this.getBenchmarkCommunityStats(),
       generatedAt: Date.now()
     };
   }
@@ -603,7 +605,7 @@ export class LeaderboardStore extends DurableObject {
     const safeLimit =
       Math.max(
         1,
-        Math.min(100, Math.floor(limit))
+        Math.min(10000, Math.floor(limit))
       );
 
     const rows = this.sql.exec(
@@ -644,6 +646,81 @@ export class LeaderboardStore extends DurableObject {
         return a.username.localeCompare(b.username);
       })
       .slice(0, safeLimit);
+  }
+
+  getBenchmarkCommunityStats() {
+    const rows =
+      this.sql.exec(
+        `SELECT * FROM benchmark_profiles`
+      ).toArray();
+
+    const profiles =
+      rows.map(row =>
+        this.benchmarkRowToProfile(row)
+      );
+
+    const complete =
+      profiles.filter(
+        profile => profile.rating.complete
+      );
+
+    const average = values =>
+      values.length
+        ? values.reduce((a, b) => a + b, 0) / values.length
+        : 0;
+
+    const skillAverages = {};
+
+    for (const test of BMS_TESTS) {
+      const values =
+        profiles
+          .map(profile =>
+            Number(profile.scores[test] || 0)
+          )
+          .filter(value => value > 0);
+
+      skillAverages[test] =
+        Math.round(average(values) * 10) / 10;
+    }
+
+    const classes = {};
+
+    for (const profile of complete) {
+      const key =
+        profile.rating.skillClass;
+
+      classes[key] =
+        (classes[key] || 0) + 1;
+    }
+
+    return {
+      profiles: profiles.length,
+      completeProfiles: complete.length,
+      submissions:
+        profiles.reduce(
+          (sum, profile) =>
+            sum + Number(profile.submissions || 0),
+          0
+        ),
+      averageRating:
+        Math.round(
+          average(
+            complete.map(
+              profile => profile.rating.rating
+            )
+          ) * 10
+        ) / 10,
+      averageOverall:
+        Math.round(
+          average(
+            complete.map(
+              profile => profile.rating.overall
+            )
+          ) * 10
+        ) / 10,
+      skillAverages,
+      classes
+    };
   }
 
   getBenchmarkPercentile(rating) {
