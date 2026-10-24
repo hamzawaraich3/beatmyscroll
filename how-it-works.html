@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="How BeatMyScroll measures scrolling, calculates speed and score, detects inactivity, handles RUSH multipliers, and keeps leaderboard metrics comparable." />
+  <meta name="description" content="How the BeatMyScroll mechanics benchmark measures reaction, flicks, tracking, switching, precision and click burst, then combines them into BMS Rating." />
   <link rel="canonical" href="https://beatmyscroll.com/how-it-works.html" />
-  <title>How BeatMyScroll Works</title>
+  <title>Benchmark Methodology | BeatMyScroll</title>
   <link rel="stylesheet" href="content.css" />
 </head>
 <body>
@@ -13,209 +13,193 @@
   <nav class="content-nav" aria-label="Main navigation">
     <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
     <div class="content-nav-links">
-      <a href="/stats.html">Stats</a><a href="/records.html">Records</a>
-      <a href="/benchmark.html">Benchmark</a><a href="/how-it-works.html" aria-current="page">How It Works</a>
-      <a href="/devlog.html">Dev Log</a><a href="/about.html">About</a>
+      <a href="/benchmark.html">Benchmark</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/stats.html">Stats</a>
+      <a href="/how-it-works.html" aria-current="page">Methodology</a>
+      <a href="/classic.html">Classic</a>
+      <a href="/devlog.html">Dev Log</a>
     </div>
   </nav>
 
   <header class="content-hero">
-    <p class="content-kicker">UNDER THE HOOD</p>
-    <h1>HOW IT<br><em>WORKS.</em></h1>
+    <p class="content-kicker">BMS BENCHMARK METHODOLOGY</p>
+    <h1>WHAT ARE WE<br><em>MEASURING?</em></h1>
     <p class="content-deck">
-      BeatMyScroll looks intentionally chaotic, but the game underneath is
-      simple. Browser input is converted into a normalized scroll rate, that
-      rate drives the speed display and score multiplier, and the run ends when
-      meaningful input disappears for roughly 1.5 seconds.
+      BeatMyScroll 2.0 is a six-axis browser mechanics benchmark aimed at the
+      motor skills that show up repeatedly in mouse-heavy shooters. It is not a
+      replacement for an in-game aim trainer, and browser/device latency still
+      matters, but every test is designed to isolate a useful mechanical trait.
     </p>
   </header>
 
   <section class="section">
-    <div class="section-heading"><span class="section-index">01</span><h2>WHAT COUNTS AS A SCROLL?</h2></div>
+    <div class="section-heading"><span class="section-index">01</span><h2>THE SIX SKILLS</h2></div>
+    <div class="prose">
+      <h3>Reaction — 20%</h3>
+      <p>
+        Five randomized visual-delay trials measure the time between the field
+        becoming actionable and the primary pointer press. The benchmark uses
+        the <strong>median</strong>, not the fastest trial, so one lucky response
+        does not define the result.
+      </p>
+
+      <h3>Flick Acquisition — 25%</h3>
+      <p>
+        Twenty targets appear sequentially at random positions. The raw result
+        contains average acquisition time and hit accuracy. The normalized score
+        rewards speed, but accuracy scales the result down when a player throws
+        misses at the problem. Flicking receives the largest rating weight
+        because fast acquisition with control is central to many shooter
+        engagements.
+      </p>
+
+      <h3>Tracking — 20%</h3>
+      <p>
+        A target follows a multi-frequency continuous path for fifteen seconds.
+        The browser samples whether the pointer is inside the target over time.
+        The raw result is the percentage of active test time spent on target.
+        This is continuous control, not a click test.
+      </p>
+
+      <h3>Target Switching — 15%</h3>
+      <p>
+        Multiple threats remain visible while only one is active. After each
+        successful hit, another target becomes active. Average transfer time and
+        miss rate are combined, approximating the repeated visual-selection and
+        aim-transfer pattern common in multi-target fights.
+      </p>
+
+      <h3>Micro Precision — 15%</h3>
+      <p>
+        Small targets score where the pointer lands relative to the center.
+        Touching the edge is not treated like a perfect hit. Misses reduce the
+        center-quality result, while average acquisition time contributes a
+        smaller speed component.
+      </p>
+
+      <h3>Click Burst — 5%</h3>
+      <p>
+        Five seconds of primary-click cadence on a fixed pad. This test exists
+        because raw clicking is still a motor skill, but it receives the lowest
+        BMS Rating weight so spam speed cannot overpower aim mechanics.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><span class="section-index">02</span><h2>FROM RAW RESULT TO 0–100.</h2></div>
     <div class="prose">
       <p>
-        Browsers do not give every device the same kind of input. A traditional
-        mouse wheel can emit wheel events in discrete steps. A high-resolution
-        wheel or trackpad can emit many smaller deltas. A phone reports touch
-        movement rather than wheel movement at all.
+        Each event first produces a raw measurement: milliseconds, percentage,
+        clicks per second, or a combination of timing and accuracy. That raw
+        result is converted into a normalized 0–100 skill score using a fixed
+        scoring function.
       </p>
       <p>
-        BeatMyScroll therefore does not simply count browser events. It takes the
-        magnitude of meaningful wheel or touch movement and converts that input
-        into a common internal distance. That internal distance is what feeds the
-        game's speed calculation.
+        Fixed functions matter because the meaning of your score should not
+        suddenly change just because a new player joined the site. Community
+        percentiles are displayed separately from the normalized skill score.
       </p>
       <div class="callout">
-        <strong>Important:</strong> “scrolls/s” is a BeatMyScroll gameplay unit.
-        It is useful for comparing runs inside BeatMyScroll, but it is not a
-        scientific measurement of physical mouse-wheel notches per second.
+        <strong>Server-recomputed, not cheat-proof.</strong>
+        When a synced result reaches Cloudflare, the backend recalculates the
+        normalized score from the submitted raw measurements instead of trusting
+        a browser-provided 0–100 score. A browser benchmark can still be
+        manipulated by a determined client, so public rankings should be treated
+        as competitive community records rather than a secure professional
+        tournament anti-cheat system.
       </div>
-      <h3>Why dragging the scrollbar is different</h3>
-      <p>
-        The game listens to actual wheel/touch gameplay input instead of awarding
-        points based on the document's page position. Jumping a browser scrollbar
-        to the bottom therefore does not create the same score as sustained input.
-        This is also why the active game screen itself does not need an infinitely
-        tall web document to create the illusion of an endless run.
-      </p>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-heading"><span class="section-index">02</span><h2>LIVE SPEED VS. SCORING SPEED</h2></div>
+    <div class="section-heading"><span class="section-index">03</span><h2>BMS RATING.</h2></div>
     <div class="prose">
-      <p>
-        BeatMyScroll intentionally separates the number you see from the number
-        used to keep scoring stable. The <strong>live speed</strong> display is
-        uncapped: if the browser reports an enormous burst, the max-speed stat
-        can preserve that burst.
-      </p>
-      <p>
-        The scoring path uses a normalized rate so unusual hardware or a single
-        giant browser delta cannot make the score explode without limit. This
-        lets the speed stat stay fun and uncapped while the raw-score leaderboard
-        remains more comparable between devices.
-      </p>
-      <h3>Why speed decays</h3>
-      <p>
-        The live rate fades continuously when input slows. This makes acceleration
-        and deceleration visible instead of letting one fast flick leave the HUD
-        stuck at a high speed. The same fading rate drives visual intensity:
-        speed lines stretch, the projected corridor becomes more aggressive, and
-        higher arcade ranks become increasingly unstable.
-      </p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-heading"><span class="section-index">03</span><h2>THE SCORE</h2></div>
-    <div class="prose">
-      <p>
-        The raw score is based on input distance multiplied by a speed-dependent
-        scoring multiplier and any active RUSH multiplier. In plain English:
-        <strong>more scrolling scores points, faster scrolling makes those points
-        worth more, and a completed RUSH gate can temporarily multiply them.</strong>
-      </p>
-      <p>
-        This means two runs with the same total input can finish with different
-        scores. The player who maintains a stronger pace and successfully uses
-        RUSH windows can score more from that input.
-      </p>
-      <h3>Why there are three leaderboards</h3>
+      <p>The weighted overall score uses:</p>
       <ul>
-        <li><strong>Raw score</strong> rewards the overall run: pace, survival and multiplier management.</li>
-        <li><strong>Average speed</strong> rewards sustained intensity across active scrolling time.</li>
-        <li><strong>Maximum speed</strong> records the fastest burst observed during the run.</li>
+        <li><strong>25%</strong> Flick Acquisition</li>
+        <li><strong>20%</strong> Reaction</li>
+        <li><strong>20%</strong> Tracking</li>
+        <li><strong>15%</strong> Target Switching</li>
+        <li><strong>15%</strong> Micro Precision</li>
+        <li><strong>5%</strong> Click Burst</li>
       </ul>
       <p>
-        Keeping these categories separate avoids pretending that one number
-        describes every kind of skill.
+        The weighted 0–100 result is mapped onto a 0–2000 BMS Rating centered
+        around 1000. A weighted overall score of 50 corresponds to roughly
+        1000 rating; every additional overall point is worth about 20 rating.
+      </p>
+      <p>
+        Class thresholds are Recruit, Bronze, Silver, Gold, Platinum, Diamond,
+        Ascendant, Immortal and Demon. Until all six tests have been completed,
+        the site displays a <strong>provisional</strong> rating based only on the
+        completed axes.
       </p>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-heading"><span class="section-index">04</span><h2>THE 1.5-SECOND RULE</h2></div>
+    <div class="section-heading"><span class="section-index">04</span><h2>BEST RESULTS, NOT AVERAGE GRIND.</h2></div>
     <div class="prose">
       <p>
-        The core pressure mechanic is the inactivity timer. Every meaningful
-        input refreshes the run. Once the game has gone roughly 1.5 seconds
-        without meaningful scrolling, the run ends.
+        Each skill stores your best normalized result. Repeating a test can
+        improve that axis, but a weaker retry does not erase the personal best.
+        The global BMS leaderboard only includes complete six-test profiles.
       </p>
       <p>
-        The danger bar is a direct visualization of that deadline. In the final
-        portion it turns red and the interface enters a panic state. Recovering
-        from that state before the deadline creates a CLUTCH SAVE callout, but it
-        does not secretly add score; it is feedback for a recovery the player
-        already made.
+        This design makes the profile a mechanical ceiling snapshot rather than
+        an average of every warm-up attempt. A future ranked mode could use
+        session averages or limited attempts, but the current benchmark is
+        deliberately a best-performance profile.
       </p>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-heading"><span class="section-index">05</span><h2>RUSH GATES & COMBOS</h2></div>
+    <div class="section-heading"><span class="section-index">05</span><h2>HARDWARE MATTERS.</h2></div>
     <div class="prose">
       <p>
-        RUSH gates are short optional challenges that ask for a fixed amount of
-        downward input inside a limited window. Lower multipliers are deliberately
-        easier to complete. Larger rewards demand more input in less time.
+        Display refresh rate, browser scheduling, mouse polling rate, operating
+        system input handling, touch hardware and end-to-end latency can all
+        affect browser measurements. Reaction time is especially sensitive to
+        the complete input/display pipeline.
       </p>
       <p>
-        Completing a gate activates its multiplier for a limited period. Missing
-        the gate resets the active RUSH multiplier and breaks the current RUSH
-        chain. The chain itself is mostly an arcade-feedback system; its milestone
-        callouts do not silently change the leaderboard rules.
+        For the most comparable shooter-oriented profile, use a desktop or
+        laptop with a mouse, keep browser zoom at a normal level, avoid background
+        load, and run the full suite in one focused session. Touch is supported
+        for several tests, but a touchscreen result should not be interpreted as
+        directly equivalent to a mouse benchmark.
       </p>
-      <h3>Why the gate is three-dimensional</h3>
       <p>
-        Earlier prototypes used glowing circles. They were readable but visually
-        disconnected from the speed fantasy. The current gate is staged inside a
-        projected corridor so it feels like a checkpoint approaching the player
-        rather than a flat UI popup.
+        Losing tab focus aborts the active test rather than letting background
+        throttling produce a misleading result.
       </p>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-heading"><span class="section-index">06</span><h2>RANKS, ZONES & VISUAL STAGES</h2></div>
+    <div class="section-heading"><span class="section-index">06</span><h2>WHERE DID SCROLLING GO?</h2></div>
     <div class="prose">
       <p>
-        D through SSS ranks are live feedback for current speed. They do not
-        replace the leaderboard stats. Higher ranks shake and distort more to
-        make speed feel unstable and earned.
+        The original scrolling game is still available as
+        <a href="/classic.html"><strong>BeatMyScroll Classic</strong></a>.
+        Classic measures scroll endurance, scroll speed, RUSH performance and
+        survival. Those records remain separate from BMS Rating because scroll
+        mechanics are not a meaningful component of shooter aim.
       </p>
       <p>
-        Zones are score milestones that change the atmosphere of the run.
-        Separately, sustained high-speed stages can trigger larger audio/visual
-        moments. Those systems deliberately sit on top of the same underlying
-        score rather than creating separate hidden currencies.
+        Keeping the systems separate protects both identities: Classic can stay
+        ridiculous, while the mechanics benchmark can stay interpretable.
       </p>
-      <h3>PB Ghost</h3>
-      <p>
-        When you set a personal best, BeatMyScroll stores a lightweight timeline
-        of that best run in your browser. Future runs can compare the current
-        score with that old score at the same elapsed time. The PB Ghost is local
-        to your browser; it is not another public leaderboard record.
-      </p>
-      <h3>Overdrive</h3>
-      <p>
-        OVERDRIVE is a separate arcade objective for sustained speed. Holding
-        roughly 18+ scrolls/s charges the meter; maintaining faster pace fills it
-        more quickly. When it reaches 100%, the game enters a short visual
-        Overdrive state. It deliberately does <strong>not</strong> multiply score,
-        so older leaderboard results remain comparable.
-      </p>
-      <h3>Daily Challenge</h3>
-      <p>
-        Each UTC day generates one deterministic objective—score, endurance,
-        sustained average speed or burst speed. Completion and the daily streak
-        are stored locally in the browser and do not alter the global
-        leaderboard.
-      </p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-heading"><span class="section-index">07</span><h2>PERFORMANCE MODE</h2></div>
-    <div class="prose">
-      <p>
-        The game automatically reduces decorative rendering when a device reports
-        limited hardware or when frame timing shows that the full effect stack is
-        struggling. Lite Mode uses fewer tunnel elements, fewer projected
-        particles, simpler shadows and fewer expensive animations.
-      </p>
-      <p>
-        The important part is what Lite Mode <strong>does not</strong> change:
-        scoring, inactivity timing, speed thresholds, leaderboard values and RUSH
-        difficulty remain gameplay systems rather than graphics settings.
-      </p>
-      <a class="cta-button" href="/benchmark.html">SEE THE LIVE SPEED BENCHMARK →</a>
+      <a class="cta-button" href="/benchmark.html?mode=full">RUN THE FULL BMS BENCHMARK →</a>
     </div>
   </section>
 
   <footer class="site-footer">
-    <div>BeatMyScroll mechanics documentation.</div>
-    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/benchmark.html">Benchmark</a><a href="/devlog.html">Dev Log</a></nav>
+    <div>BeatMyScroll Benchmark Methodology</div>
+    <nav><a href="/">Home</a><a href="/benchmark.html">Benchmark</a><a href="/profile.html">Profile</a><a href="/privacy.html">Privacy</a><a href="/contact.html">Feedback</a></nav>
   </footer>
 </main>
 </body>
