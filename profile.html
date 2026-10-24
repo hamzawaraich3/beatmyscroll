@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="View your BeatMyScroll mechanics profile, BMS Rating, skill breakdown and global benchmark rank." />
+  <link rel="canonical" href="https://beatmyscroll.com/profile.html" />
+  <title>BMS Profile | BeatMyScroll</title>
+  <link rel="stylesheet" href="profile.css" />
+</head>
+<body>
+  <header class="profile-nav">
+    <a class="profile-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <nav>
+      <a href="/benchmark.html">Benchmark</a>
+      <a href="/profile.html" aria-current="page">Profile</a>
+      <a href="/stats.html">Stats</a>
+      <a href="/classic.html">Classic</a>
+    </nav>
+  </header>
+
+  <main class="profile-shell">
+    <section class="profile-hero">
+      <div class="identity-block">
+        <p class="profile-kicker">BMS PLAYER PROFILE</p>
+        <h1 id="profile-name">LOCAL PROFILE</h1>
+        <div class="rating-row">
+          <div>
+            <span>BMS RATING</span>
+            <strong id="profile-rating">—</strong>
+          </div>
+          <div>
+            <span>CLASS</span>
+            <strong id="profile-class">UNRANKED</strong>
+          </div>
+          <div>
+            <span>GLOBAL PERCENTILE</span>
+            <strong id="profile-percentile">—</strong>
+          </div>
+        </div>
+        <p id="profile-status" class="profile-status">
+          Complete all six tests to earn an official BMS Rating.
+        </p>
+        <div class="profile-actions">
+          <a href="/benchmark.html?mode=full" class="profile-button primary">RUN FULL BENCHMARK</a>
+          <button id="profile-share" class="profile-button" type="button">SHARE PROFILE</button>
+          <button id="profile-claim" class="profile-button" type="button">CLAIM / SYNC</button>
+        </div>
+        <div id="profile-share-status" class="share-status"></div>
+      </div>
+
+      <div class="radar-card">
+        <div class="radar-head">
+          <span>MECHANICS FINGERPRINT</span>
+          <strong id="profile-overall">0.0</strong>
+        </div>
+        <svg id="skill-radar" viewBox="0 0 260 260" role="img" aria-label="Six-axis mechanics radar chart">
+          <g id="radar-grid"></g>
+          <polygon id="radar-shape" points="" />
+          <g id="radar-labels"></g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="profile-section">
+      <div class="profile-section-head">
+        <div><span>SKILL BREAKDOWN</span><h2>SIX AXES. NO HIDING.</h2></div>
+        <p>Normalized scores are server-recomputed from each test's raw measurements.</p>
+      </div>
+      <div id="profile-skills" class="profile-skills"></div>
+    </section>
+
+    <section id="leaderboard" class="profile-section">
+      <div class="profile-section-head">
+        <div><span>GLOBAL BMS</span><h2>COMPLETE PROFILES.</h2></div>
+        <p>Only players who finish all six tests appear on the BMS Rating leaderboard.</p>
+      </div>
+      <div class="bms-board">
+        <div class="bms-board-head">
+          <span>RANK</span><span>PLAYER</span><span>RATING</span><span>CLASS</span><span>OVERALL</span>
+        </div>
+        <div id="bms-board-body" class="bms-board-body">
+          <div class="board-loading">Loading global profiles…</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-section profile-method">
+      <div>
+        <span>RATING MODEL</span>
+        <h2>WHY ONE NUMBER?</h2>
+      </div>
+      <p>
+        BMS Rating converts the weighted six-skill profile into a 0–2000 competitive
+        rating. Flicks carry the most weight, followed by reaction and tracking.
+        Click speed intentionally matters least so raw spam cannot overpower aim.
+      </p>
+      <a href="/how-it-works.html" class="profile-text-link">READ THE FULL MODEL →</a>
+    </section>
+  </main>
+
+  <dialog id="profile-claim-dialog" class="profile-dialog">
+    <form id="profile-claim-form" method="dialog">
+      <span>BMS IDENTITY</span>
+      <h2>CLAIM THIS PROFILE.</h2>
+      <p>Your name is shared with Classic Scroll. Best benchmark results sync to this browser identity.</p>
+      <input id="profile-claim-name" type="text" maxlength="15" pattern="[A-Za-z0-9_-]{1,15}" placeholder="USERNAME" required />
+      <small id="profile-claim-error"></small>
+      <div>
+        <button id="profile-claim-cancel" type="button" class="profile-button">CANCEL</button>
+        <button type="submit" class="profile-button primary">CLAIM & SYNC</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="profile-footer">
+    <span>BeatMyScroll Mechanics Profile</span>
+    <nav><a href="/">Home</a><a href="/benchmark.html">Benchmark</a><a href="/privacy.html">Privacy</a><a href="/contact.html">Feedback</a></nav>
+  </footer>
+
+  <script src="bms-core.js" defer></script>
+  <script src="profile.js" defer></script>
+</body>
+</html>
