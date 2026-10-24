@@ -601,6 +601,54 @@ export class LeaderboardStore extends DurableObject {
     return this.benchmarkRowToProfile(row);
   }
 
+  getBenchmarkSkillLeaderboard(test, limit = 50) {
+    if (!BMS_TESTS.includes(test)) {
+      throw new Error("Invalid benchmark skill.");
+    }
+
+    const safeLimit =
+      Math.max(
+        1,
+        Math.min(100, Math.floor(limit))
+      );
+
+    const scoreColumn =
+      test + "_score";
+
+    const rawColumn =
+      test + "_raw";
+
+    return this.sql.exec(
+      `SELECT p.username,
+              b.${scoreColumn} AS score,
+              b.${rawColumn} AS raw,
+              b.updated_at
+         FROM benchmark_profiles b
+         JOIN players p ON p.id = b.player_id
+         WHERE b.${scoreColumn} > 0
+         ORDER BY b.${scoreColumn} DESC,
+                  b.updated_at ASC,
+                  p.username COLLATE NOCASE ASC
+         LIMIT ?`,
+      safeLimit
+    ).toArray().map(row => {
+      let raw = null;
+
+      if (row.raw) {
+        try {
+          raw = JSON.parse(row.raw);
+        } catch {}
+      }
+
+      return {
+        username: row.username,
+        score: Number(row.score),
+        raw,
+        updatedAt: Number(row.updated_at)
+      };
+    });
+  }
+
   getBenchmarkLeaderboard(limit = 50) {
     const safeLimit =
       Math.max(
@@ -836,6 +884,39 @@ export class LeaderboardStore extends DurableObject {
         );
       }
 
+
+      if (path === "/api/bms-skill-leaderboard" && request.method === "GET") {
+        const test =
+          (url.searchParams.get("test") || "").trim();
+
+        const requested =
+          Number(url.searchParams.get("limit") || "50");
+
+        const limit =
+          Number.isFinite(requested)
+            ? Math.max(1, Math.min(100, Math.floor(requested)))
+            : 50;
+
+        if (!BMS_TESTS.includes(test)) {
+          return reply({
+            error: "Invalid benchmark skill."
+          }, 422);
+        }
+
+        return reply(
+          {
+            test,
+            leaderboard:
+              this.getBenchmarkSkillLeaderboard(test, limit),
+            generatedAt: Date.now()
+          },
+          200,
+          {
+            "Cache-Control":
+              "public, max-age=60, stale-while-revalidate=300"
+          }
+        );
+      }
 
       if (path === "/api/bms-leaderboard" && request.method === "GET") {
         const requested =
