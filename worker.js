@@ -44,6 +44,265 @@ async function digestSession(value) {
     .map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+const BMS_TESTS = [
+  "reaction",
+  "flick",
+  "tracking",
+  "switching",
+  "precision",
+  "click"
+];
+
+const BMS_WEIGHTS = {
+  reaction: 0.20,
+  flick: 0.25,
+  tracking: 0.20,
+  switching: 0.15,
+  precision: 0.15,
+  click: 0.05
+};
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, value));
+}
+
+function bmsRatingFromScores(scores) {
+  let weighted = 0;
+  let weightTotal = 0;
+  let completed = 0;
+
+  for (const test of BMS_TESTS) {
+    const score = Number(scores[test] || 0);
+
+    if (score > 0) {
+      completed += 1;
+      weighted += score * BMS_WEIGHTS[test];
+      weightTotal += BMS_WEIGHTS[test];
+    }
+  }
+
+  const overall =
+    weightTotal > 0
+      ? weighted / weightTotal
+      : 0;
+
+  const rating =
+    Math.round(
+      Math.max(
+        0,
+        Math.min(
+          2000,
+          1000 + (overall - 50) * 20
+        )
+      )
+    );
+
+  let skillClass = "RECRUIT";
+
+  if (rating >= 1950) skillClass = "DEMON";
+  else if (rating >= 1800) skillClass = "IMMORTAL";
+  else if (rating >= 1600) skillClass = "ASCENDANT";
+  else if (rating >= 1400) skillClass = "DIAMOND";
+  else if (rating >= 1200) skillClass = "PLATINUM";
+  else if (rating >= 1000) skillClass = "GOLD";
+  else if (rating >= 800) skillClass = "SILVER";
+  else if (rating >= 600) skillClass = "BRONZE";
+
+  return {
+    overall: Math.round(overall * 10) / 10,
+    rating,
+    skillClass,
+    completed,
+    complete: completed === BMS_TESTS.length
+  };
+}
+
+function parseBmsTest(data) {
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    Array.isArray(data)
+  ) {
+    return null;
+  }
+
+  const test =
+    typeof data.test === "string"
+      ? data.test
+      : "";
+
+  const raw =
+    typeof data.raw === "object" &&
+    data.raw !== null &&
+    !Array.isArray(data.raw)
+      ? data.raw
+      : null;
+
+  if (!BMS_TESTS.includes(test) || !raw) {
+    return null;
+  }
+
+  let score = 0;
+  let cleanRaw = null;
+
+  if (test === "reaction") {
+    const medianMs = Number(raw.medianMs);
+
+    if (
+      !Number.isFinite(medianMs) ||
+      medianMs < 80 ||
+      medianMs > 1500
+    ) return null;
+
+    score =
+      clampScore(
+        ((400 - medianMs) / 250) * 100
+      );
+
+    cleanRaw = {
+      medianMs: Math.round(medianMs)
+    };
+  }
+
+  if (test === "click") {
+    const cps = Number(raw.cps);
+
+    if (
+      !Number.isFinite(cps) ||
+      cps < 0 ||
+      cps > 40
+    ) return null;
+
+    score =
+      clampScore(
+        ((cps - 3) / 7) * 100
+      );
+
+    cleanRaw = {
+      cps: Math.round(cps * 100) / 100
+    };
+  }
+
+  if (test === "tracking") {
+    const accuracy = Number(raw.accuracy);
+
+    if (
+      !Number.isFinite(accuracy) ||
+      accuracy < 0 ||
+      accuracy > 100
+    ) return null;
+
+    score =
+      clampScore(accuracy);
+
+    cleanRaw = {
+      accuracy: Math.round(accuracy * 10) / 10
+    };
+  }
+
+  if (test === "flick") {
+    const avgMs = Number(raw.avgMs);
+    const accuracy = Number(raw.accuracy);
+
+    if (
+      !Number.isFinite(avgMs) ||
+      avgMs < 100 ||
+      avgMs > 5000 ||
+      !Number.isFinite(accuracy) ||
+      accuracy < 0 ||
+      accuracy > 100
+    ) return null;
+
+    const speedScore =
+      clampScore(
+        ((900 - avgMs) / 650) * 100
+      );
+
+    score =
+      clampScore(
+        speedScore *
+        (
+          0.55 +
+          0.45 * (accuracy / 100)
+        )
+      );
+
+    cleanRaw = {
+      avgMs: Math.round(avgMs),
+      accuracy: Math.round(accuracy * 10) / 10
+    };
+  }
+
+  if (test === "switching") {
+    const avgMs = Number(raw.avgMs);
+    const accuracy = Number(raw.accuracy);
+
+    if (
+      !Number.isFinite(avgMs) ||
+      avgMs < 100 ||
+      avgMs > 5000 ||
+      !Number.isFinite(accuracy) ||
+      accuracy < 0 ||
+      accuracy > 100
+    ) return null;
+
+    const speedScore =
+      clampScore(
+        ((850 - avgMs) / 600) * 100
+      );
+
+    score =
+      clampScore(
+        speedScore *
+        (
+          0.62 +
+          0.38 * (accuracy / 100)
+        )
+      );
+
+    cleanRaw = {
+      avgMs: Math.round(avgMs),
+      accuracy: Math.round(accuracy * 10) / 10
+    };
+  }
+
+  if (test === "precision") {
+    const precision = Number(raw.precision);
+    const avgMs = Number(raw.avgMs);
+
+    if (
+      !Number.isFinite(precision) ||
+      precision < 0 ||
+      precision > 100 ||
+      !Number.isFinite(avgMs) ||
+      avgMs < 100 ||
+      avgMs > 8000
+    ) return null;
+
+    const speedScore =
+      clampScore(
+        ((1400 - avgMs) / 1100) * 100
+      );
+
+    score =
+      clampScore(
+        precision * 0.78 +
+        speedScore * 0.22
+      );
+
+    cleanRaw = {
+      precision: Math.round(precision * 10) / 10,
+      avgMs: Math.round(avgMs)
+    };
+  }
+
+  return {
+    test,
+    score: Math.round(score * 10) / 10,
+    raw: cleanRaw
+  };
+}
+
 function parseRun(data) {
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
     return null;
@@ -97,6 +356,31 @@ export class LeaderboardStore extends DurableObject {
     );
     this.sql.exec(
       "CREATE INDEX IF NOT EXISTS max_rank ON players(best_max_speed DESC)"
+    );
+
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS benchmark_profiles (
+        player_id INTEGER PRIMARY KEY,
+        reaction_score REAL NOT NULL DEFAULT 0,
+        reaction_raw TEXT,
+        flick_score REAL NOT NULL DEFAULT 0,
+        flick_raw TEXT,
+        tracking_score REAL NOT NULL DEFAULT 0,
+        tracking_raw TEXT,
+        switching_score REAL NOT NULL DEFAULT 0,
+        switching_raw TEXT,
+        precision_score REAL NOT NULL DEFAULT 0,
+        precision_raw TEXT,
+        click_score REAL NOT NULL DEFAULT 0,
+        click_raw TEXT,
+        submissions INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY(player_id) REFERENCES players(id)
+      )
+    `);
+
+    this.sql.exec(
+      "CREATE INDEX IF NOT EXISTS benchmark_updated ON benchmark_profiles(updated_at DESC)"
     );
   }
 
@@ -260,6 +544,132 @@ export class LeaderboardStore extends DurableObject {
     };
   }
 
+  benchmarkRowToProfile(row) {
+    if (!row) {
+      return {
+        scores: {
+          reaction: 0,
+          flick: 0,
+          tracking: 0,
+          switching: 0,
+          precision: 0,
+          click: 0
+        },
+        raw: {},
+        rating: bmsRatingFromScores({})
+      };
+    }
+
+    const scores = {
+      reaction: Number(row.reaction_score || 0),
+      flick: Number(row.flick_score || 0),
+      tracking: Number(row.tracking_score || 0),
+      switching: Number(row.switching_score || 0),
+      precision: Number(row.precision_score || 0),
+      click: Number(row.click_score || 0)
+    };
+
+    const raw = {};
+
+    for (const test of BMS_TESTS) {
+      const value = row[test + "_raw"];
+
+      if (value) {
+        try {
+          raw[test] = JSON.parse(value);
+        } catch {}
+      }
+    }
+
+    return {
+      scores,
+      raw,
+      submissions: Number(row.submissions || 0),
+      updatedAt: Number(row.updated_at || 0),
+      rating: bmsRatingFromScores(scores)
+    };
+  }
+
+  getBenchmarkProfileByPlayerId(playerId) {
+    const row = this.sql.exec(
+      "SELECT * FROM benchmark_profiles WHERE player_id = ?",
+      playerId
+    ).toArray()[0] || null;
+
+    return this.benchmarkRowToProfile(row);
+  }
+
+  getBenchmarkLeaderboard(limit = 50) {
+    const safeLimit =
+      Math.max(
+        1,
+        Math.min(100, Math.floor(limit))
+      );
+
+    const rows = this.sql.exec(
+      `SELECT p.username, b.*
+         FROM benchmark_profiles b
+         JOIN players p ON p.id = b.player_id
+         WHERE b.reaction_score > 0
+           AND b.flick_score > 0
+           AND b.tracking_score > 0
+           AND b.switching_score > 0
+           AND b.precision_score > 0
+           AND b.click_score > 0`
+    ).toArray();
+
+    return rows
+      .map(row => {
+        const profile =
+          this.benchmarkRowToProfile(row);
+
+        return {
+          username: row.username,
+          rating: profile.rating.rating,
+          overall: profile.rating.overall,
+          skillClass: profile.rating.skillClass,
+          scores: profile.scores,
+          updatedAt: profile.updatedAt
+        };
+      })
+      .sort((a, b) => {
+        if (b.rating !== a.rating) {
+          return b.rating - a.rating;
+        }
+
+        if (b.overall !== a.overall) {
+          return b.overall - a.overall;
+        }
+
+        return a.username.localeCompare(b.username);
+      })
+      .slice(0, safeLimit);
+  }
+
+  getBenchmarkPercentile(rating) {
+    const rows =
+      this.getBenchmarkLeaderboard(10000);
+
+    if (!rows.length) {
+      return {
+        total: 0,
+        percentile: 0
+      };
+    }
+
+    const atOrBelow =
+      rows.filter(row => row.rating <= rating).length;
+
+    return {
+      total: rows.length,
+      percentile:
+        Math.round(
+          (atOrBelow / rows.length) *
+          1000
+        ) / 10
+    };
+  }
+
   async findPlayer(request) {
     const session = extractSession(request);
     if (!session) return null;
@@ -345,6 +755,261 @@ export class LeaderboardStore extends DurableObject {
         );
       }
 
+
+      if (path === "/api/bms-leaderboard" && request.method === "GET") {
+        const requested =
+          Number(url.searchParams.get("limit") || "50");
+
+        const limit =
+          Number.isFinite(requested)
+            ? Math.max(1, Math.min(100, Math.floor(requested)))
+            : 50;
+
+        return reply(
+          {
+            leaderboard:
+              this.getBenchmarkLeaderboard(limit),
+            generatedAt: Date.now()
+          },
+          200,
+          {
+            "Cache-Control":
+              "public, max-age=60, stale-while-revalidate=300"
+          }
+        );
+      }
+
+      if (path === "/api/bms-profile" && request.method === "GET") {
+        const player =
+          await this.findPlayer(request);
+
+        if (!player) {
+          return reply({
+            username: null,
+            profile:
+              this.benchmarkRowToProfile(null),
+            percentile: {
+              total: 0,
+              percentile: 0
+            }
+          });
+        }
+
+        const profile =
+          this.getBenchmarkProfileByPlayerId(
+            player.id
+          );
+
+        const percentile =
+          profile.rating.complete
+            ? this.getBenchmarkPercentile(
+                profile.rating.rating
+              )
+            : {
+                total:
+                  this.getBenchmarkLeaderboard(10000).length,
+                percentile: 0
+              };
+
+        return reply({
+          username: player.username,
+          profile,
+          percentile
+        });
+      }
+
+      if (path === "/api/bms-submit" && request.method === "POST") {
+        const origin =
+          request.headers.get("origin");
+
+        if (origin && origin !== url.origin) {
+          return reply({
+            error: "Cross-site submission denied."
+          }, 403);
+        }
+
+        if (
+          !(request.headers.get("content-type") || "")
+            .includes("application/json")
+        ) {
+          return reply({
+            error: "Expected JSON."
+          }, 415);
+        }
+
+        const bodyText =
+          await request.text();
+
+        if (bodyText.length > 4096) {
+          return reply({
+            error: "Request too large."
+          }, 413);
+        }
+
+        let payload;
+
+        try {
+          payload = JSON.parse(bodyText);
+        } catch {
+          return reply({
+            error: "Invalid JSON."
+          }, 400);
+        }
+
+        const result =
+          parseBmsTest(payload);
+
+        if (!result) {
+          return reply({
+            error: "Invalid benchmark result."
+          }, 422);
+        }
+
+        const now = Date.now();
+
+        let player =
+          await this.findPlayer(request);
+
+        let cookieHeader = null;
+
+        if (!player) {
+          const username =
+            typeof payload.username === "string"
+              ? payload.username.trim()
+              : "";
+
+          if (!USERNAME_PATTERN.test(username)) {
+            return reply({
+              error:
+                "Choose a username with 1–15 letters, numbers, - or _.",
+              code: "NAME_REQUIRED"
+            }, 422);
+          }
+
+          const alreadyExists =
+            this.sql.exec(
+              "SELECT id FROM players WHERE username = ? COLLATE NOCASE",
+              username
+            ).toArray()[0];
+
+          if (alreadyExists) {
+            return reply({
+              error:
+                "That username is taken. Try another!",
+              code: "NAME_TAKEN"
+            }, 409);
+          }
+
+          const session = makeSession();
+          const hash =
+            await digestSession(session);
+
+          this.sql.exec(
+            `INSERT INTO players
+               (username, session_hash, created_at, updated_at)
+               VALUES (?, ?, ?, ?)`,
+            username,
+            hash,
+            now,
+            now
+          );
+
+          player =
+            this.sql.exec(
+              "SELECT id, username, runs FROM players WHERE session_hash = ?",
+              hash
+            ).toArray()[0];
+
+          cookieHeader =
+            `${COOKIE_NAME}=${session}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_LIFETIME}`;
+        }
+
+        this.sql.exec(
+          `INSERT INTO benchmark_profiles
+             (player_id, updated_at)
+             VALUES (?, ?)
+             ON CONFLICT(player_id) DO NOTHING`,
+          player.id,
+          now
+        );
+
+        const scoreColumn =
+          result.test + "_score";
+
+        const rawColumn =
+          result.test + "_raw";
+
+        const current =
+          this.sql.exec(
+            `SELECT ${scoreColumn} AS score
+               FROM benchmark_profiles
+               WHERE player_id = ?`,
+            player.id
+          ).toArray()[0];
+
+        const previousScore =
+          Number(current ? current.score : 0);
+
+        if (result.score > previousScore) {
+          this.sql.exec(
+            `UPDATE benchmark_profiles
+               SET ${scoreColumn} = ?,
+                   ${rawColumn} = ?,
+                   submissions = submissions + 1,
+                   updated_at = ?
+               WHERE player_id = ?`,
+            result.score,
+            JSON.stringify(result.raw),
+            now,
+            player.id
+          );
+        } else {
+          this.sql.exec(
+            `UPDATE benchmark_profiles
+               SET submissions = submissions + 1,
+                   updated_at = ?
+               WHERE player_id = ?`,
+            now,
+            player.id
+          );
+        }
+
+        const profile =
+          this.getBenchmarkProfileByPlayerId(
+            player.id
+          );
+
+        const percentile =
+          profile.rating.complete
+            ? this.getBenchmarkPercentile(
+                profile.rating.rating
+              )
+            : {
+                total:
+                  this.getBenchmarkLeaderboard(10000).length,
+                percentile: 0
+              };
+
+        return reply(
+          {
+            success: true,
+            username: player.username,
+            result: {
+              test: result.test,
+              score: result.score,
+              raw: result.raw,
+              personalBest:
+                result.score > previousScore
+            },
+            profile,
+            percentile
+          },
+          200,
+          cookieHeader
+            ? { "Set-Cookie": cookieHeader }
+            : {}
+        );
+      }
 
       if (path === "/api/me" && request.method === "GET") {
         const player = await this.findPlayer(request);
