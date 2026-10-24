@@ -779,6 +779,58 @@ export class LeaderboardStore extends DurableObject {
         );
       }
 
+      if (path === "/api/bms-user" && request.method === "GET") {
+        const username =
+          (url.searchParams.get("username") || "").trim();
+
+        if (!USERNAME_PATTERN.test(username)) {
+          return reply({
+            error: "Invalid username."
+          }, 422);
+        }
+
+        const player =
+          this.sql.exec(
+            "SELECT id, username FROM players WHERE username = ? COLLATE NOCASE",
+            username
+          ).toArray()[0];
+
+        if (!player) {
+          return reply({
+            error: "Profile not found."
+          }, 404);
+        }
+
+        const profile =
+          this.getBenchmarkProfileByPlayerId(
+            player.id
+          );
+
+        const percentile =
+          profile.rating.complete
+            ? this.getBenchmarkPercentile(
+                profile.rating.rating
+              )
+            : {
+                total:
+                  this.getBenchmarkLeaderboard(10000).length,
+                percentile: 0
+              };
+
+        return reply(
+          {
+            username: player.username,
+            profile,
+            percentile
+          },
+          200,
+          {
+            "Cache-Control":
+              "public, max-age=60, stale-while-revalidate=300"
+          }
+        );
+      }
+
       if (path === "/api/bms-profile" && request.method === "GET") {
         const player =
           await this.findPlayer(request);
