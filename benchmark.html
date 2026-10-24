@@ -3,108 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Benchmark your BeatMyScroll speed against registered competitors and see your estimated percentile." />
+  <meta name="description" content="Run the full BeatMyScroll esports mechanics benchmark: reaction, flick acquisition, tracking, target switching, precision and click burst." />
   <link rel="canonical" href="https://beatmyscroll.com/benchmark.html" />
-  <title>Scroll Speed Benchmark | BeatMyScroll</title>
-  <link rel="stylesheet" href="content.css" />
+  <title>BMS Mechanics Lab | BeatMyScroll</title>
+  <link rel="stylesheet" href="benchmark.css" />
 </head>
 <body>
-<main class="content-shell">
-  <nav class="content-nav" aria-label="Main navigation">
-    <a class="content-brand" href="/">BEAT<span>MY</span>SCROLL</a>
-    <div class="content-nav-links">
-      <a href="/stats.html">Stats</a><a href="/records.html">Records</a>
-      <a href="/benchmark.html" aria-current="page">Benchmark</a><a href="/how-it-works.html">How It Works</a>
-      <a href="/devlog.html">Dev Log</a><a href="/about.html">About</a>
-    </div>
-  </nav>
-
-  <header class="content-hero">
-    <p class="content-kicker">COMMUNITY SPEED BENCHMARK</p>
-    <h1>HOW FAST<br><em>ARE YOU?</em></h1>
-    <p class="content-deck">
-      Compare a BeatMyScroll result against the best submitted results of
-      registered competitors. Enter an average or maximum speed and the live
-      backend will calculate where it falls in the current distribution.
-    </p>
-    <p class="data-note">
-      BeatMyScroll's “scrolls/s” is a normalized game unit, not a universal
-      hardware standard. It is useful for comparing BeatMyScroll runs, not for
-      claiming a mouse or phone produces a scientifically exact number of
-      physical wheel notches per second.
-    </p>
+  <header class="lab-nav">
+    <a class="lab-brand" href="/">BEAT<span>MY</span>SCROLL</a>
+    <nav>
+      <a href="/benchmark.html" aria-current="page">Lab</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/classic.html">Classic</a>
+      <a href="/how-it-works.html">Methodology</a>
+    </nav>
   </header>
 
-  <section class="section">
-    <div class="section-heading"><span class="section-index">01</span><h2>CHECK A SPEED</h2></div>
-    <div class="benchmark-tool panel">
-      <form id="benchmark-form" class="benchmark-form">
-        <label for="benchmark-metric">METRIC</label>
-        <select id="benchmark-metric">
-          <option value="average">Average speed</option>
-          <option value="maximum">Maximum speed</option>
-        </select>
-        <label for="benchmark-value" style="margin-top:18px">SCROLLS / SECOND</label>
-        <input id="benchmark-value" type="number" min="0" max="1000000" step="0.1" inputmode="decimal" placeholder="e.g. 24.5" required />
-        <button type="submit">COMPARE TO PLAYERS →</button>
-      </form>
-      <div class="benchmark-result">
-        <span>YOUR COMMUNITY PERCENTILE</span>
-        <strong id="benchmark-percentile">—</strong>
-        <p id="benchmark-copy">Enter one of your BeatMyScroll speed results to compare it with registered competitors.</p>
+  <main class="lab-shell">
+    <section class="lab-hero">
+      <div>
+        <p class="lab-kicker">BMS MECHANICS LAB // MOUSE RECOMMENDED</p>
+        <h1>BUILD YOUR<br><em>MECHANICS PROFILE.</em></h1>
+        <p>
+          Six focused tests. Roughly four minutes. Each event saves its best result
+          locally and can sync to one global BMS profile.
+        </p>
+        <button id="start-suite" class="lab-button primary" type="button">RUN FULL BENCHMARK</button>
+      </div>
+      <aside class="suite-summary">
+        <span>YOUR CURRENT PROFILE</span>
+        <strong id="suite-rating">—</strong>
+        <em id="suite-class">UNRANKED</em>
+        <div class="suite-meter"><div id="suite-meter-fill"></div></div>
+        <small id="suite-progress">0 / 6 TESTS COMPLETE</small>
+      </aside>
+    </section>
+
+    <section class="lab-tests">
+      <div class="lab-section-head">
+        <div><span>EVENT SELECT</span><h2>RUN ONE OR RUN ALL SIX.</h2></div>
+        <p>For a complete BMS Rating, finish every event. Best results persist.</p>
+      </div>
+
+      <div class="lab-test-grid">
+        <button class="lab-test-card" data-test="reaction" type="button">
+          <span>01 · 20%</span><i>⚡</i><h3>Reaction</h3>
+          <p>Five random-delay visual reaction trials. Median response time.</p>
+          <strong id="best-reaction">NOT TESTED</strong>
+        </button>
+        <button class="lab-test-card" data-test="flick" type="button">
+          <span>02 · 25%</span><i>＋</i><h3>Flick Acquisition</h3>
+          <p>Twenty sequential targets. Speed and hit accuracy both matter.</p>
+          <strong id="best-flick">NOT TESTED</strong>
+        </button>
+        <button class="lab-test-card" data-test="tracking" type="button">
+          <span>03 · 20%</span><i>◎</i><h3>Tracking</h3>
+          <p>Stay on a continuously moving target for fifteen seconds.</p>
+          <strong id="best-tracking">NOT TESTED</strong>
+        </button>
+        <button class="lab-test-card" data-test="switching" type="button">
+          <span>04 · 15%</span><i>⇄</i><h3>Target Switching</h3>
+          <p>Rapidly transfer between active threats without misclicking.</p>
+          <strong id="best-switching">NOT TESTED</strong>
+        </button>
+        <button class="lab-test-card" data-test="precision" type="button">
+          <span>05 · 15%</span><i>⊙</i><h3>Micro Precision</h3>
+          <p>Small targets score center quality, not just whether you touched them.</p>
+          <strong id="best-precision">NOT TESTED</strong>
+        </button>
+        <button class="lab-test-card" data-test="click" type="button">
+          <span>06 · 5%</span><i>⌁</i><h3>Click Burst</h3>
+          <p>Five seconds of raw click cadence on a fixed target.</p>
+          <strong id="best-click">NOT TESTED</strong>
+        </button>
+      </div>
+    </section>
+
+    <section class="lab-method">
+      <div>
+        <span>WHY THESE SIX?</span>
+        <h2>THEY MAP TO SHOOTER MECHANICS.</h2>
+      </div>
+      <div class="method-grid">
+        <article><strong>Reaction</strong><p>Stimulus recognition and immediate motor response.</p></article>
+        <article><strong>Flick</strong><p>Fast target acquisition without sacrificing accuracy.</p></article>
+        <article><strong>Tracking</strong><p>Continuous mouse correction against moving targets.</p></article>
+        <article><strong>Switching</strong><p>Visual selection plus repeated aim transfers.</p></article>
+        <article><strong>Precision</strong><p>Fine motor control around small target centers.</p></article>
+        <article><strong>Click Burst</strong><p>Raw cadence; intentionally weighted least.</p></article>
+      </div>
+      <a href="/how-it-works.html" class="lab-text-link">READ THE FULL SCORING METHODOLOGY →</a>
+    </section>
+  </main>
+
+  <section id="runner" class="runner hidden" aria-live="polite">
+    <div class="runner-topbar">
+      <div>
+        <span id="runner-index">TEST 01 / 06</span>
+        <strong id="runner-name">REACTION</strong>
+      </div>
+      <div class="runner-top-stats">
+        <span id="runner-progress">READY</span>
+        <button id="runner-exit" type="button">EXIT</button>
       </div>
     </div>
-  </section>
 
-  <section class="section">
-    <div class="section-heading"><span class="section-index">02</span><h2>LIVE SPEED TIERS</h2></div>
-    <p class="section-intro">
-      These are not arbitrary labels. The thresholds come from the current
-      distribution of registered players' best average-speed records.
-    </p>
-    <div class="panel" style="margin-top:26px">
-      <div class="panel-header"><span>BEST AVERAGE SPEED</span><span id="tier-count">LIVE</span></div>
-      <div class="panel-body benchmark-bars" id="tier-bars"><div class="loading">Loading benchmark tiers…</div></div>
+    <div class="runner-body">
+      <section id="runner-intro" class="runner-panel">
+        <span class="runner-label">PROTOCOL</span>
+        <h2 id="runner-title">Reaction</h2>
+        <p id="runner-instructions"></p>
+        <div id="runner-specs" class="runner-specs"></div>
+        <button id="runner-start" class="lab-button primary" type="button">START TEST</button>
+      </section>
+
+      <section id="arena" class="arena hidden" aria-label="Benchmark test area"></section>
+
+      <section id="runner-result" class="runner-panel result-panel hidden">
+        <span class="runner-label">RESULT</span>
+        <h2 id="result-headline">TEST COMPLETE</h2>
+        <div class="result-score">
+          <span>NORMALIZED SCORE</span>
+          <strong id="result-score">0</strong>
+          <em>/ 100</em>
+        </div>
+        <div id="result-raw" class="result-raw"></div>
+        <p id="result-pb"></p>
+        <div class="result-actions">
+          <button id="result-retry" class="lab-button" type="button">RETRY</button>
+          <button id="result-continue" class="lab-button primary" type="button">CONTINUE</button>
+        </div>
+        <div id="sync-status" class="sync-status"></div>
+      </section>
     </div>
   </section>
 
-  <section class="section">
-    <div class="section-heading"><span class="section-index">03</span><h2>HOW TO READ THE PERCENTILE</h2></div>
-    <div class="prose">
-      <p>
-        If your result is in the <strong>90th percentile</strong>, it is at or
-        above roughly 90% of the registered competitors included in that metric.
-        Another way to say it: you are around the top 10% of that comparison
-        group.
-      </p>
-      <p>
-        The comparison changes over time. As more players submit runs and
-        existing players improve their records, the threshold for a particular
-        percentile can move.
-      </p>
-      <h3>Average speed versus max speed</h3>
-      <p>
-        Average speed is the better endurance benchmark because it rewards
-        maintaining pace. Max speed is a burst benchmark: it tells you how high
-        your fastest observed peak climbed during the run. A player can rank
-        extremely well in one and much lower in the other.
-      </p>
-      <h3>Different devices</h3>
-      <p>
-        Mouse wheels, trackpads and touchscreens emit browser input differently.
-        BeatMyScroll normalizes that input for gameplay, but device design still
-        matters. The benchmark therefore describes performance <strong>inside
-        this game</strong>, not a laboratory measurement of your hardware.
-      </p>
-      <a class="cta-button" href="/">PLAY A RUN AND GET YOUR NUMBERS →</a>
-    </div>
-  </section>
+  <dialog id="claim-dialog" class="claim-dialog">
+    <form method="dialog" id="claim-form">
+      <span>BMS IDENTITY</span>
+      <h2>CLAIM YOUR PROFILE.</h2>
+      <p>Use the same 1–15 character name for Classic and the mechanics benchmark.</p>
+      <input id="claim-name" type="text" maxlength="15" pattern="[A-Za-z0-9_-]{1,15}" autocomplete="nickname" placeholder="USERNAME" required />
+      <small id="claim-error"></small>
+      <div>
+        <button value="cancel" class="lab-button" type="button" id="claim-cancel">NOT NOW</button>
+        <button class="lab-button primary" type="submit">CLAIM & SYNC</button>
+      </div>
+    </form>
+  </dialog>
 
-  <footer class="site-footer">
-    <div>Percentiles are calculated live from registered leaderboard competitors.</div>
-    <nav><a href="/">Play</a><a href="/stats.html">Stats</a><a href="/records.html">Records</a><a href="/how-it-works.html">How It Works</a></nav>
+  <footer class="lab-footer">
+    <span>BeatMyScroll Mechanics Lab</span>
+    <nav><a href="/">Home</a><a href="/profile.html">Profile</a><a href="/privacy.html">Privacy</a><a href="/contact.html">Feedback</a></nav>
   </footer>
-</main>
-<script src="benchmark.js" defer></script>
+
+  <script src="bms-core.js" defer></script>
+  <script src="benchmark.js" defer></script>
 </body>
 </html>
