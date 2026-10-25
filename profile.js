@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded",async function(){
 "use strict";
 const C=window.BMSCore;
+const H=window.BMSHouse;
 const $=id=>document.getElementById(id);
 const query=new URLSearchParams(location.search);
 const publicUser=query.get("user");
@@ -158,26 +159,68 @@ async function getPublic(username){
 
 async function loadBoard(){
   const body=$("bms-board-body");
+  if(body.dataset.loading==="1")return;
+  body.dataset.loading="1";
+
   try{
-    const res=await fetch("/api/bms-leaderboard?limit=50",{cache:"no-store"});
+    const res=await fetch("/api/bms-leaderboard?limit=25",{cache:"no-store"});
     if(!res.ok)throw new Error();
+
     const data=await res.json();
-    const rows=Array.isArray(data.leaderboard)?data.leaderboard:[];
+    const real=Array.isArray(data.leaderboard)?data.leaderboard:[];
+    const rows=H?H.fillProfiles(real,8):real;
+
     body.replaceChildren();
-    if(!rows.length){
-      const empty=document.createElement("div");empty.className="board-loading";empty.textContent="No complete global profiles yet. Finish all six tests and become the first.";body.appendChild(empty);return;
-    }
+
     rows.forEach((row,i)=>{
-      const el=document.createElement("div");el.className="bms-board-row"+(currentUsername&&row.username.toLowerCase()===currentUsername.toLowerCase()?" current":"");
-      const rank=document.createElement("span");rank.className="rank";rank.textContent="#"+String(i+1).padStart(2,"0");
-      const player=document.createElement("a");player.className="player";player.href="/profile.html?user="+encodeURIComponent(row.username);player.textContent=row.username;player.style.textDecoration="none";
-      const rating=document.createElement("strong");rating.className="rating";rating.textContent=row.rating;
-      const cls=document.createElement("span");cls.className="class";cls.textContent=row.skillClass;
-      const overall=document.createElement("span");overall.className="overall";overall.textContent=Number(row.overall).toFixed(1);
-      el.append(rank,player,rating,cls,overall);body.appendChild(el);
+      const el=document.createElement("div");
+      el.className="bms-board-row"+
+        (row.isHouse?" reference":"")+
+        (currentUsername&&!row.isHouse&&row.username.toLowerCase()===currentUsername.toLowerCase()?" current":"");
+
+      const rank=document.createElement("span");
+      rank.className="rank";
+      rank.textContent=row.isHouse?"REF":"#"+String(i+1).padStart(2,"0");
+
+      const playerWrap=document.createElement("div");
+      playerWrap.className="player-wrap";
+
+      const player=row.isHouse?document.createElement("span"):document.createElement("a");
+      player.className="player";
+      player.textContent=row.username;
+
+      if(!row.isHouse){
+        player.href="/profile.html?user="+encodeURIComponent(row.username);
+      }
+
+      playerWrap.appendChild(player);
+
+      if(row.isHouse){
+        const badge=document.createElement("small");
+        badge.className="house-badge";
+        badge.textContent=row.badge||"HOUSE";
+        playerWrap.appendChild(badge);
+      }
+
+      const rating=document.createElement("strong");
+      rating.className="rating";
+      rating.textContent=row.rating;
+
+      const cls=document.createElement("span");
+      cls.className="class";
+      cls.textContent=row.skillClass;
+
+      const overall=document.createElement("span");
+      overall.className="overall";
+      overall.textContent=Number(row.overall).toFixed(1);
+
+      el.append(rank,playerWrap,rating,cls,overall);
+      body.appendChild(el);
     });
   }catch(e){
     body.innerHTML='<div class="board-loading">Global BMS leaderboard is temporarily unavailable.</div>';
+  }finally{
+    body.dataset.loading="0";
   }
 }
 
@@ -190,32 +233,56 @@ async function loadSkillBoard(test){
 
   try{
     const res=await fetch(
-      "/api/bms-skill-leaderboard?test="+encodeURIComponent(test)+"&limit=50",
+      "/api/bms-skill-leaderboard?test="+encodeURIComponent(test)+"&limit=25",
       {cache:"no-store"}
     );
 
     if(!res.ok)throw new Error();
 
     const data=await res.json();
-    const rows=Array.isArray(data.leaderboard)?data.leaderboard:[];
-    body.replaceChildren();
+    const real=Array.isArray(data.leaderboard)?data.leaderboard:[];
+    const rows=H?H.fillSkill(test,real,5):real;
 
-    if(!rows.length){
-      const empty=document.createElement("div");
-      empty.className="board-loading";
-      empty.textContent="No synced "+C.TESTS[test].name+" results yet.";
-      body.appendChild(empty);
-      return;
-    }
+    body.replaceChildren();
 
     rows.forEach((row,i)=>{
       const el=document.createElement("div");
-      el.className="skill-board-row";
-      const rank=document.createElement("span");rank.className="rank";rank.textContent="#"+String(i+1).padStart(2,"0");
-      const player=document.createElement("a");player.className="player";player.href="/profile.html?user="+encodeURIComponent(row.username);player.textContent=row.username;
-      const score=document.createElement("strong");score.className="score";score.textContent=Number(row.score).toFixed(1);
-      const raw=document.createElement("span");raw.className="raw";raw.textContent=C.formatRaw(test,row.raw);
-      el.append(rank,player,score,raw);body.appendChild(el);
+      el.className="skill-board-row"+(row.isHouse?" reference":"");
+
+      const rank=document.createElement("span");
+      rank.className="rank";
+      rank.textContent=row.isHouse?"REF":"#"+String(i+1).padStart(2,"0");
+
+      const playerWrap=document.createElement("div");
+      playerWrap.className="player-wrap";
+
+      const player=row.isHouse?document.createElement("span"):document.createElement("a");
+      player.className="player";
+      player.textContent=row.username;
+
+      if(!row.isHouse){
+        player.href="/profile.html?user="+encodeURIComponent(row.username);
+      }
+
+      playerWrap.appendChild(player);
+
+      if(row.isHouse){
+        const badge=document.createElement("small");
+        badge.className="house-badge";
+        badge.textContent=row.badge||"HOUSE";
+        playerWrap.appendChild(badge);
+      }
+
+      const score=document.createElement("strong");
+      score.className="score";
+      score.textContent=Number(row.score).toFixed(1);
+
+      const raw=document.createElement("span");
+      raw.className="raw";
+      raw.textContent=C.formatRaw(test,row.raw);
+
+      el.append(rank,playerWrap,score,raw);
+      body.appendChild(el);
     });
   }catch(e){
     body.innerHTML='<div class="board-loading">Event records are temporarily unavailable.</div>';
@@ -278,7 +345,37 @@ $("profile-share").addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(text+" "+url);status.textContent="Profile link copied.";}catch(e){status.textContent="Copy the profile URL from your browser.";}
 });
 
+function lazyLoadBoards(){
+  const overallSection=document.querySelector("#leaderboard");
+  const skillSection=document.querySelector("#skill-board-tabs")?.closest(".profile-section");
+
+  if(!("IntersectionObserver" in window)){
+    loadBoard();
+    loadSkillBoard(activeSkillBoard);
+    return;
+  }
+
+  if(overallSection){
+    const overallObserver=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){
+        overallObserver.disconnect();
+        loadBoard();
+      }
+    },{rootMargin:"420px 0px"});
+    overallObserver.observe(overallSection);
+  }
+
+  if(skillSection){
+    const skillObserver=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){
+        skillObserver.disconnect();
+        loadSkillBoard(activeSkillBoard);
+      }
+    },{rootMargin:"420px 0px"});
+    skillObserver.observe(skillSection);
+  }
+}
+
 if(viewingPublic)await getPublic(publicUser);else await getCurrent();
-await loadBoard();
-await loadSkillBoard(activeSkillBoard);
+lazyLoadBoards();
 });
