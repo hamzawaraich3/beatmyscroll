@@ -41,6 +41,30 @@ const HOUSE_PROFILES=[
     overall:60.6,
     skillClass:"PLATINUM",
     scores:{reaction:61.0,flick:63.8,tracking:57.7,switching:60.2,precision:62.4,click:48.5}
+  },
+  {
+    username:"DEMO_PRECISION",
+    badge:"DEMO",
+    rating:1176,
+    overall:58.8,
+    skillClass:"GOLD",
+    scores:{reaction:55.2,flick:57.8,tracking:54.9,switching:56.1,precision:82.5,click:49.2}
+  },
+  {
+    username:"HOUSE_REACT",
+    badge:"HOUSE",
+    rating:1098,
+    overall:54.9,
+    skillClass:"GOLD",
+    scores:{reaction:90.0,flick:51.4,tracking:49.5,switching:50.8,precision:54.0,click:46.1}
+  },
+  {
+    username:"DEMO_BALANCED",
+    badge:"DEMO",
+    rating:1036,
+    overall:51.8,
+    skillClass:"GOLD",
+    scores:{reaction:52.0,flick:53.4,tracking:50.7,switching:51.1,precision:52.8,click:47.5}
   }
 ];
 
@@ -77,7 +101,7 @@ const SKILL_RAW={
   ]
 };
 
-function fillProfiles(realRows,minRows=5){
+function fillProfiles(realRows,minRows=8){
   const real=Array.isArray(realRows)?realRows:[];
   if(real.length>=minRows)return real;
   const needed=minRows-real.length;
