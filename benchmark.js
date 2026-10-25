@@ -325,42 +325,131 @@ async function runTracking(){
     const duration=15000;
     const target=document.createElement("div");
     target.className="tracking-target";
-    const diameter=matchMedia("(pointer:coarse)").matches?74:62;
-    target.style.width=target.style.height=diameter+"px";
-    arena.appendChild(target);
-    const hud=arenaHud("ON TARGET <strong>0.0%</strong>","TIME <strong>15.0</strong>");
 
-    let px=-9999,py=-9999,onTime=0,last=performance.now();
+    const diameter=
+      matchMedia("(pointer:coarse)").matches
+        ? 74
+        : 62;
+
+    target.style.width=
+      target.style.height=
+        diameter+"px";
+
+    target.style.left="0";
+    target.style.top="0";
+
+    arena.appendChild(target);
+
+    const hud=
+      arenaHud(
+        "ON TARGET <strong>0.0%</strong>",
+        "TIME <strong>15.0</strong>"
+      );
+
+    let rect=
+      arena.getBoundingClientRect();
+
+    let px=-9999;
+    let py=-9999;
+    let onTime=0;
+    let last=performance.now();
+    let lastHud=0;
+
     const started=last;
 
-    function updatePointer(event){
-      const rect=arena.getBoundingClientRect();
-      px=event.clientX-rect.left;py=event.clientY-rect.top;
+    function refreshBounds(){
+      rect=
+        arena.getBoundingClientRect();
     }
-    on(arena,"pointermove",updatePointer);
+
+    function updatePointer(event){
+      px=event.clientX-rect.left;
+      py=event.clientY-rect.top;
+    }
+
+    on(window,"resize",refreshBounds,{passive:true});
+    on(arena,"pointermove",updatePointer,{passive:true});
     on(arena,"pointerdown",updatePointer);
 
     rafLoop(now=>{
-      const rect=arena.getBoundingClientRect();
       const elapsed=now-started;
-      const dt=Math.min(40,now-last);last=now;
+      const dt=Math.min(40,now-last);
+      last=now;
+
       const t=elapsed/1000;
-      const rx=Math.max(30,(rect.width-diameter)/2-24);
-      const ry=Math.max(30,(rect.height-diameter)/2-48);
-      const cx=rect.width/2+Math.sin(t*1.47)*rx*.68+Math.sin(t*2.53)*rx*.22;
-      const cy=rect.height/2+Math.cos(t*1.21)*ry*.62+Math.sin(t*2.09)*ry*.24;
-      target.style.left=cx+"px";target.style.top=cy+"px";
 
-      const dist=Math.hypot(px-cx,py-cy);
-      if(dist<=diameter/2)onTime+=dt;
+      const rx=
+        Math.max(
+          30,
+          (rect.width-diameter)/2-24
+        );
 
-      const used=Math.min(duration,elapsed);
-      const acc=used?onTime/used*100:0;
-      hud.left.innerHTML="ON TARGET <strong>"+acc.toFixed(1)+"%</strong>";
-      hud.right.innerHTML="TIME <strong>"+Math.max(0,(duration-elapsed)/1000).toFixed(1)+"</strong>";
+      const ry=
+        Math.max(
+          30,
+          (rect.height-diameter)/2-48
+        );
+
+      const cx=
+        rect.width/2+
+        Math.sin(t*1.47)*rx*.68+
+        Math.sin(t*2.53)*rx*.22;
+
+      const cy=
+        rect.height/2+
+        Math.cos(t*1.21)*ry*.62+
+        Math.sin(t*2.09)*ry*.24;
+
+      target.style.transform=
+        "translate3d("+
+        cx.toFixed(1)+"px,"+
+        cy.toFixed(1)+"px,0) "+
+        "translate(-50%,-50%)";
+
+      if(
+        Math.hypot(px-cx,py-cy)
+        <= diameter/2
+      ){
+        onTime+=dt;
+      }
+
+      if(
+        now-lastHud>=100 ||
+        elapsed>=duration
+      ){
+        lastHud=now;
+
+        const used=
+          Math.min(duration,elapsed);
+
+        const acc=
+          used
+            ? onTime/used*100
+            : 0;
+
+        hud.left.innerHTML=
+          "ON TARGET <strong>"+
+          acc.toFixed(1)+
+          "%</strong>";
+
+        hud.right.innerHTML=
+          "TIME <strong>"+
+          Math.max(
+            0,
+            (duration-elapsed)/1000
+          ).toFixed(1)+
+          "</strong>";
+      }
 
       if(elapsed>=duration){
-        resolve({accuracy:Math.min(100,onTime/duration*100)});
+        resolve({
+          accuracy:
+            Math.min(
+              100,
+              onTime/duration*100
+            )
+        });
+
         cleanupActive();
       }
     });
@@ -469,31 +558,90 @@ async function runPrecision(){
 
 async function runClick(){
   await countdown();
+
   return new Promise(resolve=>{
     const duration=5000;
-    const pad=document.createElement("button");
-    pad.type="button";pad.className="click-pad";
-    const wrap=document.createElement("div");
-    const countEl=document.createElement("strong");countEl.textContent="0";
-    const label=document.createElement("span");label.textContent="CLICKS";
-    wrap.append(countEl,label);pad.appendChild(wrap);arena.appendChild(pad);
-    const hud=arenaHud("RATE <strong>0.00 CPS</strong>","TIME <strong>5.0</strong>");
+
+    const pad=
+      document.createElement("button");
+
+    pad.type="button";
+    pad.className="click-pad";
+
+    const wrap=
+      document.createElement("div");
+
+    const countEl=
+      document.createElement("strong");
+
+    countEl.textContent="0";
+
+    const label=
+      document.createElement("span");
+
+    label.textContent="CLICKS";
+
+    wrap.append(countEl,label);
+    pad.appendChild(wrap);
+    arena.appendChild(pad);
+
+    const hud=
+      arenaHud(
+        "RATE <strong>0.00 CPS</strong>",
+        "TIME <strong>5.0</strong>"
+      );
+
     let clicks=0;
-    const started=performance.now();
+    let lastHud=0;
+
+    const started=
+      performance.now();
 
     on(pad,"pointerdown",event=>{
       if(!primaryPointer(event))return;
+
       event.preventDefault();
-      clicks++;countEl.textContent=clicks;
-      const elapsed=Math.max(.1,(performance.now()-started)/1000);
-      hud.left.innerHTML="RATE <strong>"+(clicks/elapsed).toFixed(2)+" CPS</strong>";
+
+      clicks+=1;
+      countEl.textContent=clicks;
     });
 
     rafLoop(now=>{
-      const elapsed=now-started;
-      hud.right.innerHTML="TIME <strong>"+Math.max(0,(duration-elapsed)/1000).toFixed(1)+"</strong>";
+      const elapsed=
+        now-started;
+
+      if(
+        now-lastHud>=100 ||
+        elapsed>=duration
+      ){
+        lastHud=now;
+
+        const seconds=
+          Math.max(
+            .1,
+            Math.min(duration,elapsed)/1000
+          );
+
+        hud.left.innerHTML=
+          "RATE <strong>"+
+          (clicks/seconds).toFixed(2)+
+          " CPS</strong>";
+
+        hud.right.innerHTML=
+          "TIME <strong>"+
+          Math.max(
+            0,
+            (duration-elapsed)/1000
+          ).toFixed(1)+
+          "</strong>";
+      }
+
       if(elapsed>=duration){
-        resolve({cps:clicks/5});
+        resolve({
+          cps:
+            clicks/5
+        });
+
         cleanupActive();
       }
     });
