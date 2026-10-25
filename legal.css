@@ -178,3 +178,15 @@ section a:hover {
     margin-top: 48px;
   }
 }
+
+
+@view-transition{navigation:auto}
+@keyframes bmsPageIn{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:none}}
+::view-transition-new(root){animation:180ms cubic-bezier(.2,.8,.2,1) both bmsPageIn}
+.legal-brand{view-transition-name:bms-brand}
+html{scrollbar-gutter:stable}
+body{overflow-x:hidden}
+section{content-visibility:auto;contain-intrinsic-size:auto 360px}
+a{-webkit-tap-highlight-color:transparent}
+a:focus-visible{outline:2px solid #21e6ff;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
