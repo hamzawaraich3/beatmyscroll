@@ -225,6 +225,54 @@ async function loadBoard(){
 }
 
 let activeSkillBoard="reaction";
+const skillBoardCache=new Map();
+
+function renderSkillBoard(test,realRows){
+  const body=$("skill-board-body");
+  const rows=H?H.fillSkill(test,realRows,5):realRows;
+
+  body.replaceChildren();
+
+  rows.forEach((row,i)=>{
+    const el=document.createElement("div");
+    el.className="skill-board-row"+(row.isHouse?" reference":"");
+
+    const rank=document.createElement("span");
+    rank.className="rank";
+    rank.textContent=row.isHouse?"REF":"#"+String(i+1).padStart(2,"0");
+
+    const playerWrap=document.createElement("div");
+    playerWrap.className="player-wrap";
+
+    const player=row.isHouse?document.createElement("span"):document.createElement("a");
+    player.className="player";
+    player.textContent=row.username;
+
+    if(!row.isHouse){
+      player.href="/profile.html?user="+encodeURIComponent(row.username);
+    }
+
+    playerWrap.appendChild(player);
+
+    if(row.isHouse){
+      const badge=document.createElement("small");
+      badge.className="house-badge";
+      badge.textContent=row.badge||"HOUSE";
+      playerWrap.appendChild(badge);
+    }
+
+    const score=document.createElement("strong");
+    score.className="score";
+    score.textContent=Number(row.score).toFixed(1);
+
+    const raw=document.createElement("span");
+    raw.className="raw";
+    raw.textContent=C.formatRaw(test,row.raw);
+
+    el.append(rank,playerWrap,score,raw);
+    body.appendChild(el);
+  });
+}
 
 async function loadSkillBoard(test){
   activeSkillBoard=test;
@@ -232,6 +280,11 @@ async function loadSkillBoard(test){
   body.innerHTML='<div class="board-loading">Loading '+C.TESTS[test].name+' records…</div>';
 
   try{
+    if(skillBoardCache.has(test)){
+      renderSkillBoard(test,skillBoardCache.get(test));
+      return;
+    }
+
     const res=await fetch(
       "/api/bms-skill-leaderboard?test="+encodeURIComponent(test)+"&limit=25",
       {cache:"no-store"}
@@ -241,49 +294,9 @@ async function loadSkillBoard(test){
 
     const data=await res.json();
     const real=Array.isArray(data.leaderboard)?data.leaderboard:[];
-    const rows=H?H.fillSkill(test,real,5):real;
 
-    body.replaceChildren();
-
-    rows.forEach((row,i)=>{
-      const el=document.createElement("div");
-      el.className="skill-board-row"+(row.isHouse?" reference":"");
-
-      const rank=document.createElement("span");
-      rank.className="rank";
-      rank.textContent=row.isHouse?"REF":"#"+String(i+1).padStart(2,"0");
-
-      const playerWrap=document.createElement("div");
-      playerWrap.className="player-wrap";
-
-      const player=row.isHouse?document.createElement("span"):document.createElement("a");
-      player.className="player";
-      player.textContent=row.username;
-
-      if(!row.isHouse){
-        player.href="/profile.html?user="+encodeURIComponent(row.username);
-      }
-
-      playerWrap.appendChild(player);
-
-      if(row.isHouse){
-        const badge=document.createElement("small");
-        badge.className="house-badge";
-        badge.textContent=row.badge||"HOUSE";
-        playerWrap.appendChild(badge);
-      }
-
-      const score=document.createElement("strong");
-      score.className="score";
-      score.textContent=Number(row.score).toFixed(1);
-
-      const raw=document.createElement("span");
-      raw.className="raw";
-      raw.textContent=C.formatRaw(test,row.raw);
-
-      el.append(rank,playerWrap,score,raw);
-      body.appendChild(el);
-    });
+    skillBoardCache.set(test,real);
+    renderSkillBoard(test,real);
   }catch(e){
     body.innerHTML='<div class="board-loading">Event records are temporarily unavailable.</div>';
   }
